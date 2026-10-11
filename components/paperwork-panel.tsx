@@ -91,6 +91,13 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
   const sampleLoadRevision = useRef(0);
   const scanRevision = useRef(0);
   const scanAbort = useRef<AbortController | null>(null);
+  const scanTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    scanRevision.current += 1;
+    scanAbort.current?.abort();
+    if (scanTimeout.current) clearTimeout(scanTimeout.current);
+  }, []);
   const demoStartLock = useRef(false);
   const proposalRef = useRef<PaperMap | null>(null);
   const suppressProgrammaticAdjustToggleRef = useRef(false);
@@ -160,6 +167,8 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
     if (!scanAbort.current && !proposal && !parseResult) return;
     scanRevision.current += 1;
     scanAbort.current?.abort();
+    if (scanTimeout.current) clearTimeout(scanTimeout.current);
+    scanTimeout.current = null;
     scanAbort.current = null;
     setIsScanning(false);
     setScanStartedAt(null);
@@ -196,6 +205,8 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
     const readRevision = ++fileReadRevision.current;
     scanRevision.current += 1;
     scanAbort.current?.abort();
+    if (scanTimeout.current) clearTimeout(scanTimeout.current);
+    scanTimeout.current = null;
     scanAbort.current = null;
     setIsScanning(false);
     setScanStartedAt(null);
@@ -310,13 +321,21 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
   }
 
   async function analyzeImage() {
-    if (!imageData || !file) return;
+    if (!imageData || !file || scanAbort.current) return;
     onScanStart();
     onPauseSimulation();
     const requestRevision = ++scanRevision.current;
     const runRevision = mapRevision;
     const controller = new AbortController();
     scanAbort.current = controller;
+    let timedOut = false;
+    const timeout = new Promise<never>((_, reject) => {
+      scanTimeout.current = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+        reject(new Error("The map scan connection timed out after 90 seconds. Your current world is unchanged. Choose Read paper map to retry."));
+      }, 90_000);
+    });
     setIsScanning(true);
     setScanStartedAt(Date.now());
     setScanElapsedSeconds(0);
@@ -328,7 +347,8 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
     proposalRef.current = null;
     setProposal(null);
     try {
-      const response = await fetch("/api/parse-map", {
+      const transport = async () => {
+        const response = await fetch("/api/parse-map", {
         method: "POST",
         signal: controller.signal,
         headers: { "Content-Type": "application/json" },
@@ -337,7 +357,11 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
           ...(startsNewWorld ? {} : { previousMap }),
         }),
       });
-      const responseBody: unknown = await response.json().catch(() => null);
+        const responseBody: unknown = await response.json().catch(() => null);
+        return { response, responseBody };
+      };
+      const { response, responseBody } = await Promise.race([transport(), timeout]);
+      if (timedOut) throw new Error("Map scan connection timed out.");
       if (!response.ok) {
         throw new Error(getErrorMessage(responseBody, `Map scan failed (${response.status}).`));
       }
@@ -361,11 +385,13 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
         adjustDetails.open = true;
       }
     } catch (error) {
-      if (requestRevision === scanRevision.current && !controller.signal.aborted) {
-        setScanError(getErrorMessage(error, "The map could not be scanned. Your current world is unchanged."));
+      if (requestRevision === scanRevision.current && (!controller.signal.aborted || timedOut)) {
+        setScanError(timedOut ? "The map scan connection timed out after 90 seconds. Your current world is unchanged. Choose Read paper map to retry." : getErrorMessage(error, "The map could not be scanned. Your current world is unchanged."));
       }
     } finally {
       if (requestRevision === scanRevision.current) {
+        if (scanTimeout.current) clearTimeout(scanTimeout.current);
+        scanTimeout.current = null;
         scanAbort.current = null;
         setIsScanning(false);
         setScanStartedAt(null);
