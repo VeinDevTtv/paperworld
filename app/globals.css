@@ -2449,6 +2449,43 @@ p {
   line-height: 10px;
 }
 
+.adjust-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.adjust-summary::-webkit-details-marker {
+  display: none;
+}
+
+.adjust-summary > span:first-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.adjust-summary strong {
+  font-size: 13px;
+}
+
+.adjust-summary small {
+  color: #6e7a70;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.adjust-summary .proposal-count:empty {
+  display: none;
+}
+
+.proposal-area[open] > .adjust-summary .summary-chevron {
+  transform: rotate(180deg);
+}
+
 .proposal-editor {
   border-top: 1px solid #e5e0d4;
 }

@@ -12,7 +12,7 @@ Camera and browser speech recognition are device/browser services. Speech may us
 
 ## Results and limits
 
-Use RELEASE_CHECKLIST.md for this release's exact evidence. docs/polish-verification.md contains prior live Codex/Jev runs on generated drawings and clearly labeled replays. New paired benchmark JSON files retain every attempt, including provider failures. Generated drawings do not prove handwriting recognition; mocked speech does not prove physical transcription. A user reported a physical speech-recognition network failure. Hardware, new-home drawing, camera repositioning and novice feedback must be reported separately.
+Use RELEASE_CHECKLIST.md for this release's exact evidence. docs/polish-verification.md contains prior live Codex/Jev runs on generated drawings and clearly labeled replays. New paired benchmark JSON files retain every attempt, including provider failures. Generated drawings do not prove handwriting recognition; mocked speech does not prove physical transcription. User reported a successful handwritten recovery loop and supplied physical dictation/dispatch/completion screenshots; Brave speech-service network failure remains recorded. Physical webcam/new-home/reposition and novice feedback must be reported separately. Mobile390px browser-emulation screenshots were independently visually reviewed; this is not physical phone evidence.
 
 ## Representative API cost, not the current billing path
 
