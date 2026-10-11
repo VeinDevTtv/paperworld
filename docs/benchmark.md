@@ -15,10 +15,12 @@ Separate isolated diagnostics reported 2/12 rapid failures with the original sch
 | 19:49 final spoken-parser head | 12/12 | 12/12 | Same frozen requests and exact criteria; all24 outcomes retained. |
 | 19:30 after schema fix | 12/12 | 12/12 | All exact-state or clarification criteria passed; 24 total calls, one repetition. |
 
-Final-run automatic median wall time: **141 ms**, mean **1,227 ms**. Codex-only median: **4,961 ms**, mean **5,787 ms**. Clarification: **5/12 (41.7%)** in each mode; these were intentionally ambiguous/invalid cases. Auto delegated three requests to Codex. Narrow Jev responses reported `jev-1.13.0`; Codex model IDs were **not reported**. Jev usage is recorded for all 12 router calls (nine direct responses plus three delegated receipts); Codex token usage is **not reported**. Missing usage is never treated as zero.
+19:30-run automatic median wall time: **141 ms**, mean **1,227 ms**. Codex-only median: **4,961 ms**, mean **5,787 ms**. Clarification: **5/12 (41.7%)** in each mode; these were intentionally ambiguous/invalid cases. Auto delegated three requests to Codex. Narrow Jev responses reported `jev-1.13.0`; Codex model IDs were **not reported**. Jev usage is recorded for all 12 router calls (nine direct responses plus three delegated receipts); Codex token usage is **not reported**. Missing usage is never treated as zero.
 
 This is a small local convenience sample, not a statistical or general speedup claim. No provider retry latency is measured because no retry occurred. Earlier failures cannot be erased by the passing run. Account/network load and process startup vary. The initial failures reproduced as intermittent HTTP400 structured-output rejection; explicitly typing command discriminators in the JSON schema removed those rapid failures in the next paired run. Slow requests and future provider failures remain possible; Retry/Use Codex stays visible and state remains unchanged until confirmation.
 
 Raw JSON: [diagnostic](evidence/benchmark-2026-10-11T19-22-29-015Z.json), [exact-state pre-fix](evidence/benchmark-2026-10-11T19-24-21-558Z.json), [post-fix](evidence/benchmark-2026-10-11T19-30-03-594Z.json). No paid API calls or physical speech/image inputs are part of this benchmark. See [cost assumptions](submission.md).
 
 Latest raw run: [final spoken-parser head](evidence/benchmark-2026-10-11T19-49-29-579Z.json). Earlier timing paragraph describes19:30 only; compare raw runs without selecting favorable results.
+
+Latest19:49 timing: auto median123.5 ms, mean1319.5 ms; Codex-only median5019.5 ms, mean4971.17 ms. Each mode clarified5/12. These are descriptive single-run observations, not a general speedup claim.
