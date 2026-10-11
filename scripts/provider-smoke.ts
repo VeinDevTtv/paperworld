@@ -156,6 +156,38 @@ async function createCodexAuthEnvironment(): Promise<NodeJS.ProcessEnv> {
 }
 
 function findCodexLauncher(environment: NodeJS.ProcessEnv): { command: string; prefixArgs: string[] } {
+  const npmRoots = [
+    environment.APPDATA ? path.join(environment.APPDATA, "npm", "node_modules") : "",
+    environment.npm_config_prefix ? path.join(environment.npm_config_prefix, "node_modules") : "",
+    environment.npm_config_prefix ? path.join(environment.npm_config_prefix, "lib", "node_modules") : "",
+    path.join(os.homedir(), ".npm-global", "lib", "node_modules"),
+  ].filter(Boolean);
+  for (const root of npmRoots) {
+    const packageRoot = path.join(root, "@openai", "codex");
+    if (process.platform === "win32" && process.arch === "x64") {
+      const native = path.join(packageRoot, "node_modules", "@openai", "codex-win32-x64", "vendor", "x86_64-pc-windows-msvc", "bin", "codex.exe");
+      try {
+        accessSync(native, fsConstants.X_OK);
+        return { command: native, prefixArgs: [] };
+      } catch {
+        // Check the sibling package layout used by some npm installs.
+      }
+      const siblingNative = path.join(root, "@openai", "codex-win32-x64", "vendor", "x86_64-pc-windows-msvc", "bin", "codex.exe");
+      try {
+        accessSync(siblingNative, fsConstants.X_OK);
+        return { command: siblingNative, prefixArgs: [] };
+      } catch {
+        // Continue to the configured PATH executable.
+      }
+    }
+    const entrypoint = path.join(packageRoot, "bin", "codex.js");
+    try {
+      accessSync(entrypoint, fsConstants.R_OK);
+      return { command: process.execPath, prefixArgs: [entrypoint] };
+    } catch {
+      // Keep looking through standard npm global install roots.
+    }
+  }
   const pathEntries = (environment.PATH ?? environment.Path ?? "").split(path.delimiter);
   const names = process.platform === "win32" ? ["codex.exe"] : ["codex"];
   for (const entry of pathEntries) {
@@ -167,21 +199,6 @@ function findCodexLauncher(environment: NodeJS.ProcessEnv): { command: string; p
       } catch {
         // Continue through PATH without printing any environment values.
       }
-    }
-  }
-  const npmRoots = [
-    environment.APPDATA ? path.join(environment.APPDATA, "npm", "node_modules") : "",
-    environment.npm_config_prefix ? path.join(environment.npm_config_prefix, "node_modules") : "",
-    environment.npm_config_prefix ? path.join(environment.npm_config_prefix, "lib", "node_modules") : "",
-    path.join(os.homedir(), ".npm-global", "lib", "node_modules"),
-  ].filter(Boolean);
-  for (const root of npmRoots) {
-    const entrypoint = path.join(root, "@openai", "codex", "bin", "codex.js");
-    try {
-      accessSync(entrypoint, fsConstants.R_OK);
-      return { command: process.execPath, prefixArgs: [entrypoint] };
-    } catch {
-      // Keep looking through standard npm global install roots.
     }
   }
   throw new Error("Codex CLI executable was not found on PATH.");
@@ -209,6 +226,7 @@ async function runCodexImageParse(imagePath: string, schemaPath: string, outputP
     const child = spawn(launcher.command, [...launcher.prefixArgs, ...args], { cwd, env: environment, shell: false, windowsHide: true, stdio: ["pipe", "pipe", "pipe"] });
     let stderrBytes = 0;
     let stdoutBytes = 0;
+    let forcedError: Error | undefined;
     const stdoutChunks: Buffer[] = [];
     let timer: NodeJS.Timeout | undefined;
     let settled = false;
@@ -222,21 +240,21 @@ async function runCodexImageParse(imagePath: string, schemaPath: string, outputP
 
     timer = setTimeout(() => {
       child.kill();
-      finish(new Error("Codex image interpretation exceeded its time limit."));
+      forcedError = new Error("Codex image interpretation exceeded its time limit.");
     }, CODEX_TIMEOUT_MS);
 
     child.stderr.on("data", (chunk: Buffer) => {
       stderrBytes += chunk.length;
       if (stderrBytes > MAX_OUTPUT_BYTES) {
         child.kill();
-        finish(new Error("Codex image interpretation exceeded its output limit."));
+        forcedError = new Error("Codex image interpretation exceeded its output limit.");
       }
     });
     child.stdout.on("data", (chunk: Buffer) => {
       stdoutBytes += chunk.length;
       if (stdoutBytes > MAX_OUTPUT_BYTES) {
         child.kill();
-        finish(new Error("Codex event stream exceeded its output limit."));
+        forcedError = new Error("Codex event stream exceeded its output limit.");
       } else {
         stdoutChunks.push(chunk);
       }
@@ -244,6 +262,10 @@ async function runCodexImageParse(imagePath: string, schemaPath: string, outputP
     child.once("error", () => finish(new Error("Codex CLI could not be started.")));
     child.once("close", (code) => {
       if (settled) return;
+      if (forcedError) {
+        finish(forcedError);
+        return;
+      }
       if (code !== 0) {
         finish(new Error("Codex image interpretation did not complete successfully."));
         return;
@@ -330,7 +352,7 @@ async function callTypeSafe(map: SmokeMap): Promise<{ model: string; decision: s
     // Do not log or expose the response body; only the HTTP status is relevant to this smoke.
     throw new Error(`TypeSafe request failed with HTTP ${response.status}.`);
   }
-  const body = typeSafeResponseSchema.parse(await response.json());
+  const body = typeSafeResponseSchema.parse(await readLimitedResponseJson(response, MAX_OUTPUT_BYTES));
   const actionAnswer = body.answers.command_type;
   const priorityAnswer = body.answers.priority;
   if (!actionAnswer || !priorityAnswer) throw new Error("TypeSafe response omitted a smoke answer.");
@@ -342,6 +364,34 @@ async function callTypeSafe(map: SmokeMap): Promise<{ model: string; decision: s
     outputTokens: body.usage?.output_tokens ?? 0,
     elapsedMs: Math.round(performance.now() - started),
   };
+}
+
+async function readLimitedResponseJson(response: Response, maxBytes: number): Promise<unknown> {
+  const length = response.headers.get("content-length");
+  if (length && /^\d+$/.test(length) && Number(length) > maxBytes) throw new Error("TypeSafe response exceeded its output limit.");
+  if (!response.body) throw new Error("TypeSafe response body is empty.");
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) {
+        await reader.cancel();
+        throw new Error("TypeSafe response exceeded its output limit.");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  try {
+    return JSON.parse(Buffer.concat(chunks.map((chunk) => Buffer.from(chunk))).toString("utf8")) as unknown;
+  } catch {
+    throw new Error("TypeSafe returned invalid JSON.");
+  }
 }
 
 async function main(): Promise<void> {
@@ -370,8 +420,16 @@ async function main(): Promise<void> {
       throw new Error("Codex did not identify the four visible map locations.");
     }
     const closedRoad = codex.result.roads.find((road) => road.closed);
-    if (codex.result.locations.length !== 4 || codex.result.roads.length !== 3 || !closedRoad || !new Set(["C-J", "J-C"]).has(`${closedRoad.from}-${closedRoad.to}`)) {
-      throw new Error("Codex did not correctly interpret the visible closed road and map connections.");
+    const edgeKey = (from: string, to: string) => [from, to].sort().join("-");
+    const expectedEdges = ["A-J", "B-J", "C-J"].sort();
+    const actualEdges = codex.result.roads.map((road) => edgeKey(road.from, road.to)).sort();
+    const closedRoads = codex.result.roads.filter((road) => road.closed);
+    if (
+      codex.result.locations.length !== 4 || codex.result.roads.length !== 3 ||
+      JSON.stringify(actualEdges) !== JSON.stringify(expectedEdges) || closedRoads.length !== 1 ||
+      !closedRoad || edgeKey(closedRoad.from, closedRoad.to) !== "C-J"
+    ) {
+      throw new Error("Codex did not correctly interpret all visible map connections and the single marked closed road.");
     }
 
     const typeSafe = await callTypeSafe(codex.result);
