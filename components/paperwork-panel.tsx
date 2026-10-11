@@ -600,7 +600,7 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
           <span className="selected-file-size">{formatBytes(file.size)}</span>
         </div>
       ) : (
-        <p className="upload-note">PNG, JPEG, or WebP · up to 1.5 MB</p>
+        <p className="upload-note">PNG, JPEG, or WebP · large photos prepared locally</p>
       )}
 
       <input
