@@ -567,12 +567,15 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
                       className="field-input"
                       value={road.from}
                       aria-label={`Start of ${road.id}`}
-                      onChange={(event) => updateProposal((current) => ({
-                        ...current,
-                        roads: current.roads.map((candidate) => candidate.id === road.id
-                          ? { ...candidate, from: event.currentTarget.value }
-                          : candidate),
-                      }))}
+                      onChange={(event) => {
+                        const from = event.currentTarget.value;
+                        updateProposal((current) => ({
+                          ...current,
+                          roads: current.roads.map((candidate) => candidate.id === road.id
+                            ? { ...candidate, from }
+                            : candidate),
+                        }));
+                      }}
                     >
                       {proposal.locations.map((location) => <option key={location.id} value={location.id}>{location.label}</option>)}
                     </select>
@@ -583,12 +586,15 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
                       className="field-input"
                       value={road.to}
                       aria-label={`End of ${road.id}`}
-                      onChange={(event) => updateProposal((current) => ({
-                        ...current,
-                        roads: current.roads.map((candidate) => candidate.id === road.id
-                          ? { ...candidate, to: event.currentTarget.value }
-                          : candidate),
-                      }))}
+                      onChange={(event) => {
+                        const to = event.currentTarget.value;
+                        updateProposal((current) => ({
+                          ...current,
+                          roads: current.roads.map((candidate) => candidate.id === road.id
+                            ? { ...candidate, to }
+                            : candidate),
+                        }));
+                      }}
                     >
                       {proposal.locations.map((location) => <option key={location.id} value={location.id}>{location.label}</option>)}
                     </select>

@@ -265,12 +265,12 @@ export function DeliveryWorld({ locations, roads, couriers = [] }: DeliveryWorld
                   role="button"
                   tabIndex={0}
                   aria-pressed={isSelected}
-                  aria-label={`Sample courier ${courier.label}`}
+                  aria-label={`Courier ${courier.label}`}
                   onClick={action}
                   onKeyDown={(event) => activateOnKeyboard(event, action)}
                   filter="url(#courier-shadow)"
                 >
-                  <title>{`Sample courier ${courier.label}`}</title>
+                  <title>{`Courier ${courier.label}`}</title>
                   <circle r="25" className="courier-pulse" />
                   <circle r="16" className="courier-disc" />
                   <path d="M-7 1h14v8H-7zM-5-5h10l3 6H-8z" className="courier-bag" />
@@ -308,7 +308,7 @@ export function DeliveryWorld({ locations, roads, couriers = [] }: DeliveryWorld
           ) : selectedRoad ? (
             <><span className="readout-type">ROAD</span><strong>{selectedRoad.from} → {selectedRoad.to}</strong><span>{selectedRoad.closed ? "Closed" : "Open"}</span></>
           ) : selectedCourier ? (
-            <><span className="readout-type">COURIER</span><strong>{selectedCourier.label}</strong><span>Sample position</span></>
+            <><span className="readout-type">COURIER</span><strong>{selectedCourier.label}</strong><span>Current position</span></>
           ) : (
             <><span className="readout-type">INSPECT</span><span>Select a stop, road, or courier</span></>
           )}
