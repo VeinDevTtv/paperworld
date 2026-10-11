@@ -4,11 +4,13 @@ Paperworld is a classroom demonstration for educators teaching connectivity, rou
 
 ## Architecture
 
-Browser photo preparation → explicit scan request → local Node/Codex subscription image interpretation → typed map review → confirmation → deterministic TypeScript simulation → SVG world.
+Browser photo preparation → explicit scan request → local Node/Codex subscription image interpretation → typed map review → confirmation → deterministic TypeScript simulation → Three.js paper diorama (or 2D SVG fallback).
 
 Text or reviewed speech transcript → Jev supported-operation classifier → fixed narrow command conversion or subscription Codex compound planner → typed entity validation → evolving scratch simulation → user confirmation → atomic commit. Code owns IDs, capacity, shortest paths, positions, pickup and completion. No inference runs per animation frame. Jev failure offers Retry or an explicit Use Codex action; it never silently activates the optional paid adapter.
 
-Camera and browser speech recognition are device/browser services. Speech may use a browser vendor network service. The app binds only to localhost, but inference is online. No database, accounts, 3D, public deployment, or extra infrastructure.
+The client renderer uses pinned Three.js 0.186.1 and React Three Fiber 9.8.1 with React 19. One authoritative simulation clock owns movement; normalized graph coordinates map onto the ground plane. Presentation effects never advance the engine. Accepted scans animate buildings/roads, accepted changes highlight connections, and real completion events trigger brief feedback. Orbit/zoom are bounded; Reset view changes only the camera. Switching views or recovering from WebGL loss preserves the run and makes no inference calls.
+
+Camera and browser speech recognition are device/browser services. Speech may use a browser vendor network service. The app binds only to localhost, but inference is online. No database, accounts, public deployment, or extra infrastructure.
 
 ## Results and limits
 

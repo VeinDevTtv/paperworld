@@ -1,0 +1,25 @@
+{
+  "evidence": "MOCKED scan result; actual production WebGL; native recording active to keep host compositor producing frames",
+  "meanFrameMs": 6.060519125683064,
+  "medianFrameMs": 6.099999999998545,
+  "memory": {
+    "geometries": 82,
+    "textures": 37
+  },
+  "nodes": 32,
+  "p95FrameMs": 6.19999999999709,
+  "render": {
+    "calls": 463,
+    "frame": 920,
+    "lines": 38,
+    "points": 0,
+    "triangles": 11584
+  },
+  "roads": 64,
+  "sample": 732,
+  "shadows": false,
+  "viewport": {
+    "height": 800,
+    "width": 1280
+  }
+}

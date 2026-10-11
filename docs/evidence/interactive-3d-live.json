@@ -1,0 +1,1828 @@
+{
+  "evidence": "synthetic raster, live Codex/Jev; mocked speech, reduced motion and WebGL failure; browser interaction; not physical hardware",
+  "calls": [
+    {
+      "at": 333134.40000000596,
+      "url": "/api/parse-map"
+    },
+    {
+      "at": 364168.59999999404,
+      "url": "/api/parse-map"
+    },
+    {
+      "at": 421949.40000000596,
+      "url": "/api/parse-map"
+    },
+    {
+      "at": 500789.6999999881,
+      "url": "/api/command"
+    }
+  ],
+  "closure3DAfter": {
+    "couriers": [
+      {
+        "capacity": 2,
+        "id": "courier-1",
+        "locationId": "depot",
+        "name": "Mina",
+        "packageIds": [
+          "pkg-1"
+        ],
+        "segment": {
+          "distance": 29.17,
+          "from": "depot",
+          "fromX": 11.46,
+          "fromY": 54.69,
+          "progress": 1.875,
+          "roadId": "depot-junction",
+          "to": "junction",
+          "toX": 40.63,
+          "toY": 54.69
+        }
+      },
+      {
+        "capacity": 2,
+        "id": "courier-2",
+        "locationId": "depot",
+        "name": "Rook",
+        "packageIds": [
+          "pkg-2"
+        ],
+        "segment": {
+          "distance": 29.17,
+          "from": "depot",
+          "fromX": 11.46,
+          "fromY": 54.69,
+          "progress": 1.875,
+          "roadId": "depot-junction",
+          "to": "junction",
+          "toX": 40.63,
+          "toY": 54.69
+        }
+      }
+    ],
+    "distanceTraveled": 3.75,
+    "elapsedSeconds": 0.18750000000000003,
+    "events": [
+      {
+        "atSeconds": 0,
+        "id": "event-1",
+        "packageId": "pkg-1",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-2",
+        "packageId": "pkg-1",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "id": "event-3",
+        "packageId": "pkg-2",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-4",
+        "packageId": "pkg-2",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-5",
+        "packageId": "pkg-1",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-6",
+        "packageId": "pkg-2",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 0.18750000000000003,
+        "id": "event-7",
+        "type": "map_updated"
+      },
+      {
+        "atSeconds": 0.18750000000000003,
+        "courierId": "courier-1",
+        "id": "event-8",
+        "packageId": "pkg-1",
+        "type": "package_unreachable"
+      }
+    ],
+    "map": {
+      "locations": [
+        {
+          "id": "depot",
+          "kind": "depot",
+          "label": "DEPOT",
+          "x": 11.46,
+          "y": 54.69
+        },
+        {
+          "id": "junction",
+          "kind": "junction",
+          "label": "JUNCTION",
+          "x": 40.63,
+          "y": 54.69
+        },
+        {
+          "id": "home",
+          "kind": "home",
+          "label": "HOME",
+          "x": 82.29,
+          "y": 22.66
+        },
+        {
+          "id": "shop",
+          "kind": "shop",
+          "label": "SHOP",
+          "x": 76.56,
+          "y": 82.03
+        }
+      ],
+      "roads": [
+        {
+          "closed": false,
+          "from": "depot",
+          "id": "depot-junction",
+          "to": "junction"
+        },
+        {
+          "closed": true,
+          "from": "junction",
+          "id": "junction-home",
+          "to": "home"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-shop",
+          "to": "shop"
+        }
+      ]
+    },
+    "nextEventNumber": 9,
+    "nextPackageNumber": 3,
+    "packages": [
+      {
+        "courierId": "courier-1",
+        "createdOrder": 1,
+        "from": "depot",
+        "id": "pkg-1",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "unreachable",
+        "to": "home"
+      },
+      {
+        "courierId": "courier-2",
+        "createdOrder": 2,
+        "from": "depot",
+        "id": "pkg-2",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "in_transit",
+        "to": "shop"
+      }
+    ]
+  },
+  "closure3DBefore": {
+    "couriers": [
+      {
+        "capacity": 2,
+        "id": "courier-1",
+        "locationId": "depot",
+        "name": "Mina",
+        "packageIds": [
+          "pkg-1"
+        ],
+        "segment": {
+          "distance": 29.17,
+          "from": "depot",
+          "fromX": 11.46,
+          "fromY": 54.69,
+          "progress": 1.875,
+          "roadId": "depot-junction",
+          "to": "junction",
+          "toX": 40.63,
+          "toY": 54.69
+        }
+      },
+      {
+        "capacity": 2,
+        "id": "courier-2",
+        "locationId": "depot",
+        "name": "Rook",
+        "packageIds": [
+          "pkg-2"
+        ],
+        "segment": {
+          "distance": 29.17,
+          "from": "depot",
+          "fromX": 11.46,
+          "fromY": 54.69,
+          "progress": 1.875,
+          "roadId": "depot-junction",
+          "to": "junction",
+          "toX": 40.63,
+          "toY": 54.69
+        }
+      }
+    ],
+    "distanceTraveled": 3.75,
+    "elapsedSeconds": 0.18750000000000003,
+    "events": [
+      {
+        "atSeconds": 0,
+        "id": "event-1",
+        "packageId": "pkg-1",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-2",
+        "packageId": "pkg-1",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "id": "event-3",
+        "packageId": "pkg-2",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-4",
+        "packageId": "pkg-2",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-5",
+        "packageId": "pkg-1",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-6",
+        "packageId": "pkg-2",
+        "type": "package_picked_up"
+      }
+    ],
+    "map": {
+      "locations": [
+        {
+          "id": "depot",
+          "kind": "depot",
+          "label": "DEPOT",
+          "x": 11.46,
+          "y": 54.69
+        },
+        {
+          "id": "junction",
+          "kind": "junction",
+          "label": "JUNCTION",
+          "x": 40.63,
+          "y": 54.69
+        },
+        {
+          "id": "home",
+          "kind": "home",
+          "label": "HOME",
+          "x": 82.29,
+          "y": 22.66
+        },
+        {
+          "id": "shop",
+          "kind": "shop",
+          "label": "SHOP",
+          "x": 76.56,
+          "y": 82.03
+        }
+      ],
+      "roads": [
+        {
+          "closed": false,
+          "from": "depot",
+          "id": "depot-junction",
+          "to": "junction"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-home",
+          "to": "home"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-shop",
+          "to": "shop"
+        }
+      ]
+    },
+    "nextEventNumber": 7,
+    "nextPackageNumber": 3,
+    "packages": [
+      {
+        "courierId": "courier-1",
+        "createdOrder": 1,
+        "from": "depot",
+        "id": "pkg-1",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "in_transit",
+        "to": "home"
+      },
+      {
+        "courierId": "courier-2",
+        "createdOrder": 2,
+        "from": "depot",
+        "id": "pkg-2",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "in_transit",
+        "to": "shop"
+      }
+    ]
+  },
+  "completed3D": {
+    "couriers": [
+      {
+        "capacity": 2,
+        "id": "courier-1",
+        "locationId": "home",
+        "name": "Mina",
+        "packageIds": [],
+        "segment": null
+      },
+      {
+        "capacity": 2,
+        "id": "courier-2",
+        "locationId": "shop",
+        "name": "Rook",
+        "packageIds": [],
+        "segment": null
+      }
+    ],
+    "distanceTraveled": 208.28405374586848,
+    "elapsedSeconds": 20.1875,
+    "events": [
+      {
+        "atSeconds": 0,
+        "id": "event-1",
+        "packageId": "pkg-1",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-2",
+        "packageId": "pkg-1",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "id": "event-3",
+        "packageId": "pkg-2",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-4",
+        "packageId": "pkg-2",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-5",
+        "packageId": "pkg-1",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-6",
+        "packageId": "pkg-2",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 0.18750000000000003,
+        "id": "event-7",
+        "type": "map_updated"
+      },
+      {
+        "atSeconds": 0.18750000000000003,
+        "courierId": "courier-1",
+        "id": "event-8",
+        "packageId": "pkg-1",
+        "type": "package_unreachable"
+      },
+      {
+        "atSeconds": 4.1875,
+        "id": "event-9",
+        "type": "map_updated"
+      },
+      {
+        "atSeconds": 4.1875,
+        "courierId": "courier-1",
+        "id": "event-10",
+        "packageId": "pkg-1",
+        "type": "package_resumed"
+      },
+      {
+        "atSeconds": 7.431909190670395,
+        "courierId": "courier-2",
+        "id": "event-11",
+        "packageId": "pkg-2",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 14.66699618391645,
+        "courierId": "courier-1",
+        "id": "event-12",
+        "packageId": "pkg-1",
+        "type": "package_delivered"
+      }
+    ],
+    "map": {
+      "locations": [
+        {
+          "id": "depot",
+          "kind": "depot",
+          "label": "DEPOT",
+          "x": 11.46,
+          "y": 54.69
+        },
+        {
+          "id": "junction",
+          "kind": "junction",
+          "label": "JUNCTION",
+          "x": 40.63,
+          "y": 54.69
+        },
+        {
+          "id": "home",
+          "kind": "home",
+          "label": "HOME",
+          "x": 82.29,
+          "y": 22.66
+        },
+        {
+          "id": "shop",
+          "kind": "shop",
+          "label": "SHOP",
+          "x": 76.56,
+          "y": 82.03
+        }
+      ],
+      "roads": [
+        {
+          "closed": false,
+          "from": "depot",
+          "id": "depot-junction",
+          "to": "junction"
+        },
+        {
+          "closed": true,
+          "from": "junction",
+          "id": "junction-home",
+          "to": "home"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-shop",
+          "to": "shop"
+        },
+        {
+          "closed": false,
+          "from": "home",
+          "id": "home-shop",
+          "to": "shop"
+        }
+      ]
+    },
+    "nextEventNumber": 13,
+    "nextPackageNumber": 3,
+    "packages": [
+      {
+        "courierId": "courier-1",
+        "createdOrder": 1,
+        "from": "depot",
+        "id": "pkg-1",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "delivered",
+        "to": "home"
+      },
+      {
+        "courierId": "courier-2",
+        "createdOrder": 2,
+        "from": "depot",
+        "id": "pkg-2",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "delivered",
+        "to": "shop"
+      }
+    ]
+  },
+  "contextProof": {
+    "canvas": false,
+    "inferenceCalls": 0,
+    "notice": "3D graphics became unavailable. The same delivery run continues in 2D.",
+    "stateUnchanged": true
+  },
+  "glCreationProof": {
+    "fallback": true,
+    "inferenceCalls": 0,
+    "stateUnchanged": true
+  },
+  "initial3D": {
+    "couriers": [
+      {
+        "capacity": 2,
+        "id": "courier-1",
+        "locationId": "depot",
+        "name": "Mina",
+        "packageIds": [],
+        "segment": null
+      },
+      {
+        "capacity": 2,
+        "id": "courier-2",
+        "locationId": "depot",
+        "name": "Rook",
+        "packageIds": [],
+        "segment": null
+      }
+    ],
+    "distanceTraveled": 0,
+    "elapsedSeconds": 0,
+    "events": [],
+    "map": {
+      "locations": [
+        {
+          "id": "depot",
+          "kind": "depot",
+          "label": "DEPOT",
+          "x": 11.46,
+          "y": 54.69
+        },
+        {
+          "id": "junction",
+          "kind": "junction",
+          "label": "JUNCTION",
+          "x": 40.63,
+          "y": 54.69
+        },
+        {
+          "id": "home",
+          "kind": "home",
+          "label": "HOME",
+          "x": 82.29,
+          "y": 22.66
+        },
+        {
+          "id": "shop",
+          "kind": "shop",
+          "label": "SHOP",
+          "x": 76.56,
+          "y": 82.03
+        }
+      ],
+      "roads": [
+        {
+          "closed": false,
+          "from": "depot",
+          "id": "depot-junction",
+          "to": "junction"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-home",
+          "to": "home"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-shop",
+          "to": "shop"
+        }
+      ]
+    },
+    "nextEventNumber": 1,
+    "nextPackageNumber": 1,
+    "packages": []
+  },
+  "receipts": [
+    {
+      "body": {
+        "latencyMs": 6398,
+        "map": {
+          "locations": [
+            {
+              "id": "depot",
+              "kind": "depot",
+              "label": "DEPOT",
+              "x": 11.46,
+              "y": 54.69
+            },
+            {
+              "id": "junction",
+              "kind": "junction",
+              "label": "JUNCTION",
+              "x": 40.63,
+              "y": 54.69
+            },
+            {
+              "id": "home",
+              "kind": "home",
+              "label": "HOME",
+              "x": 82.29,
+              "y": 22.66
+            },
+            {
+              "id": "shop",
+              "kind": "shop",
+              "label": "SHOP",
+              "x": 76.56,
+              "y": 82.03
+            }
+          ],
+          "roads": [
+            {
+              "closed": false,
+              "from": "depot",
+              "id": "depot-junction",
+              "to": "junction"
+            },
+            {
+              "closed": false,
+              "from": "junction",
+              "id": "junction-home",
+              "to": "home"
+            },
+            {
+              "closed": false,
+              "from": "junction",
+              "id": "junction-shop",
+              "to": "shop"
+            }
+          ]
+        },
+        "model": "Codex default (model not reported)",
+        "provider": "codex",
+        "requiresReview": true,
+        "reviewReasons": []
+      },
+      "status": 200,
+      "url": "/api/parse-map"
+    },
+    {
+      "body": {
+        "latencyMs": 5603,
+        "map": {
+          "locations": [
+            {
+              "id": "depot",
+              "kind": "depot",
+              "label": "DEPOT",
+              "x": 11.46,
+              "y": 54.69
+            },
+            {
+              "id": "junction",
+              "kind": "junction",
+              "label": "JUNCTION",
+              "x": 40.63,
+              "y": 54.69
+            },
+            {
+              "id": "home",
+              "kind": "home",
+              "label": "HOME",
+              "x": 82.29,
+              "y": 22.66
+            },
+            {
+              "id": "shop",
+              "kind": "shop",
+              "label": "SHOP",
+              "x": 76.56,
+              "y": 82.03
+            }
+          ],
+          "roads": [
+            {
+              "closed": false,
+              "from": "depot",
+              "id": "depot-junction",
+              "to": "junction"
+            },
+            {
+              "closed": true,
+              "from": "junction",
+              "id": "junction-home",
+              "to": "home"
+            },
+            {
+              "closed": false,
+              "from": "junction",
+              "id": "junction-shop",
+              "to": "shop"
+            }
+          ]
+        },
+        "model": "Codex default (model not reported)",
+        "provider": "codex",
+        "requiresReview": true,
+        "reviewReasons": []
+      },
+      "status": 200,
+      "url": "/api/parse-map"
+    },
+    {
+      "body": {
+        "latencyMs": 6519,
+        "map": {
+          "locations": [
+            {
+              "id": "depot",
+              "kind": "depot",
+              "label": "DEPOT",
+              "x": 11.46,
+              "y": 54.69
+            },
+            {
+              "id": "junction",
+              "kind": "junction",
+              "label": "JUNCTION",
+              "x": 40.63,
+              "y": 54.69
+            },
+            {
+              "id": "home",
+              "kind": "home",
+              "label": "HOME",
+              "x": 82.29,
+              "y": 22.66
+            },
+            {
+              "id": "shop",
+              "kind": "shop",
+              "label": "SHOP",
+              "x": 76.56,
+              "y": 82.03
+            }
+          ],
+          "roads": [
+            {
+              "closed": false,
+              "from": "depot",
+              "id": "depot-junction",
+              "to": "junction"
+            },
+            {
+              "closed": true,
+              "from": "junction",
+              "id": "junction-home",
+              "to": "home"
+            },
+            {
+              "closed": false,
+              "from": "junction",
+              "id": "junction-shop",
+              "to": "shop"
+            },
+            {
+              "closed": false,
+              "from": "home",
+              "id": "home-shop",
+              "to": "shop"
+            }
+          ]
+        },
+        "model": "Codex default (model not reported)",
+        "provider": "codex",
+        "requiresReview": true,
+        "reviewReasons": []
+      },
+      "status": 200,
+      "url": "/api/parse-map"
+    },
+    {
+      "body": {
+        "clarification": null,
+        "commands": [
+          {
+            "courierId": "courier-1",
+            "from": "depot",
+            "priority": "urgent",
+            "to": "shop",
+            "type": "dispatch-delivery"
+          }
+        ],
+        "latencyMs": 256,
+        "model": "jev-1.13.0",
+        "provider": "typesafe",
+        "routeCategory": "dispatch_delivery",
+        "routedBy": "typesafe",
+        "routerLatencyMs": 256,
+        "routerModel": "jev-1.13.0",
+        "routerUsage": {
+          "input_tokens": 922,
+          "output_tokens": 154
+        },
+        "usage": {
+          "input_tokens": 922,
+          "output_tokens": 154
+        }
+      },
+      "status": 200,
+      "url": "/api/command"
+    }
+  ],
+  "recovery3DAfter": {
+    "couriers": [
+      {
+        "capacity": 2,
+        "id": "courier-1",
+        "locationId": "junction",
+        "name": "Mina",
+        "packageIds": [
+          "pkg-1"
+        ],
+        "segment": null
+      },
+      {
+        "capacity": 2,
+        "id": "courier-2",
+        "locationId": "junction",
+        "name": "Rook",
+        "packageIds": [
+          "pkg-2"
+        ],
+        "segment": {
+          "distance": 45.14909190670395,
+          "from": "junction",
+          "fromX": 40.63,
+          "fromY": 54.69,
+          "progress": 12.704999999999998,
+          "roadId": "junction-shop",
+          "to": "shop",
+          "toX": 76.56,
+          "toY": 82.03
+        }
+      }
+    ],
+    "distanceTraveled": 71.045,
+    "elapsedSeconds": 4.1875,
+    "events": [
+      {
+        "atSeconds": 0,
+        "id": "event-1",
+        "packageId": "pkg-1",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-2",
+        "packageId": "pkg-1",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "id": "event-3",
+        "packageId": "pkg-2",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-4",
+        "packageId": "pkg-2",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-5",
+        "packageId": "pkg-1",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-6",
+        "packageId": "pkg-2",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 0.18750000000000003,
+        "id": "event-7",
+        "type": "map_updated"
+      },
+      {
+        "atSeconds": 0.18750000000000003,
+        "courierId": "courier-1",
+        "id": "event-8",
+        "packageId": "pkg-1",
+        "type": "package_unreachable"
+      },
+      {
+        "atSeconds": 4.1875,
+        "id": "event-9",
+        "type": "map_updated"
+      },
+      {
+        "atSeconds": 4.1875,
+        "courierId": "courier-1",
+        "id": "event-10",
+        "packageId": "pkg-1",
+        "type": "package_resumed"
+      }
+    ],
+    "map": {
+      "locations": [
+        {
+          "id": "depot",
+          "kind": "depot",
+          "label": "DEPOT",
+          "x": 11.46,
+          "y": 54.69
+        },
+        {
+          "id": "junction",
+          "kind": "junction",
+          "label": "JUNCTION",
+          "x": 40.63,
+          "y": 54.69
+        },
+        {
+          "id": "home",
+          "kind": "home",
+          "label": "HOME",
+          "x": 82.29,
+          "y": 22.66
+        },
+        {
+          "id": "shop",
+          "kind": "shop",
+          "label": "SHOP",
+          "x": 76.56,
+          "y": 82.03
+        }
+      ],
+      "roads": [
+        {
+          "closed": false,
+          "from": "depot",
+          "id": "depot-junction",
+          "to": "junction"
+        },
+        {
+          "closed": true,
+          "from": "junction",
+          "id": "junction-home",
+          "to": "home"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-shop",
+          "to": "shop"
+        },
+        {
+          "closed": false,
+          "from": "home",
+          "id": "home-shop",
+          "to": "shop"
+        }
+      ]
+    },
+    "nextEventNumber": 11,
+    "nextPackageNumber": 3,
+    "packages": [
+      {
+        "courierId": "courier-1",
+        "createdOrder": 1,
+        "from": "depot",
+        "id": "pkg-1",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "in_transit",
+        "to": "home"
+      },
+      {
+        "courierId": "courier-2",
+        "createdOrder": 2,
+        "from": "depot",
+        "id": "pkg-2",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "in_transit",
+        "to": "shop"
+      }
+    ]
+  },
+  "recovery3DBefore": {
+    "couriers": [
+      {
+        "capacity": 2,
+        "id": "courier-1",
+        "locationId": "junction",
+        "name": "Mina",
+        "packageIds": [
+          "pkg-1"
+        ],
+        "segment": null
+      },
+      {
+        "capacity": 2,
+        "id": "courier-2",
+        "locationId": "junction",
+        "name": "Rook",
+        "packageIds": [
+          "pkg-2"
+        ],
+        "segment": {
+          "distance": 45.14909190670395,
+          "from": "junction",
+          "fromX": 40.63,
+          "fromY": 54.69,
+          "progress": 12.704999999999998,
+          "roadId": "junction-shop",
+          "to": "shop",
+          "toX": 76.56,
+          "toY": 82.03
+        }
+      }
+    ],
+    "distanceTraveled": 71.045,
+    "elapsedSeconds": 4.1875,
+    "events": [
+      {
+        "atSeconds": 0,
+        "id": "event-1",
+        "packageId": "pkg-1",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-2",
+        "packageId": "pkg-1",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "id": "event-3",
+        "packageId": "pkg-2",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-4",
+        "packageId": "pkg-2",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-5",
+        "packageId": "pkg-1",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-6",
+        "packageId": "pkg-2",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 0.18750000000000003,
+        "id": "event-7",
+        "type": "map_updated"
+      },
+      {
+        "atSeconds": 0.18750000000000003,
+        "courierId": "courier-1",
+        "id": "event-8",
+        "packageId": "pkg-1",
+        "type": "package_unreachable"
+      }
+    ],
+    "map": {
+      "locations": [
+        {
+          "id": "depot",
+          "kind": "depot",
+          "label": "DEPOT",
+          "x": 11.46,
+          "y": 54.69
+        },
+        {
+          "id": "junction",
+          "kind": "junction",
+          "label": "JUNCTION",
+          "x": 40.63,
+          "y": 54.69
+        },
+        {
+          "id": "home",
+          "kind": "home",
+          "label": "HOME",
+          "x": 82.29,
+          "y": 22.66
+        },
+        {
+          "id": "shop",
+          "kind": "shop",
+          "label": "SHOP",
+          "x": 76.56,
+          "y": 82.03
+        }
+      ],
+      "roads": [
+        {
+          "closed": false,
+          "from": "depot",
+          "id": "depot-junction",
+          "to": "junction"
+        },
+        {
+          "closed": true,
+          "from": "junction",
+          "id": "junction-home",
+          "to": "home"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-shop",
+          "to": "shop"
+        }
+      ]
+    },
+    "nextEventNumber": 9,
+    "nextPackageNumber": 3,
+    "packages": [
+      {
+        "courierId": "courier-1",
+        "createdOrder": 1,
+        "from": "depot",
+        "id": "pkg-1",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "unreachable",
+        "to": "home"
+      },
+      {
+        "courierId": "courier-2",
+        "createdOrder": 2,
+        "from": "depot",
+        "id": "pkg-2",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "in_transit",
+        "to": "shop"
+      }
+    ]
+  },
+  "reducedProof": {
+    "cameraAfter": [
+      6.586106331622161,
+      8.981054088575679,
+      9.579791027814055
+    ],
+    "cameraBefore": [
+      10.999999999999998,
+      15.000000000000002,
+      15.999999999999998
+    ],
+    "inferenceCalls": 0,
+    "listeners": 1,
+    "preference": "mocked media query false→true",
+    "stateUnchanged": true,
+    "zoomStillWorks": true
+  },
+  "started3D": {
+    "couriers": [
+      {
+        "capacity": 2,
+        "id": "courier-1",
+        "locationId": "depot",
+        "name": "Mina",
+        "packageIds": [
+          "pkg-1"
+        ],
+        "segment": {
+          "distance": 29.17,
+          "from": "depot",
+          "fromX": 11.46,
+          "fromY": 54.69,
+          "progress": 1.875,
+          "roadId": "depot-junction",
+          "to": "junction",
+          "toX": 40.63,
+          "toY": 54.69
+        }
+      },
+      {
+        "capacity": 2,
+        "id": "courier-2",
+        "locationId": "depot",
+        "name": "Rook",
+        "packageIds": [
+          "pkg-2"
+        ],
+        "segment": {
+          "distance": 29.17,
+          "from": "depot",
+          "fromX": 11.46,
+          "fromY": 54.69,
+          "progress": 1.875,
+          "roadId": "depot-junction",
+          "to": "junction",
+          "toX": 40.63,
+          "toY": 54.69
+        }
+      }
+    ],
+    "distanceTraveled": 3.75,
+    "elapsedSeconds": 0.18750000000000003,
+    "events": [
+      {
+        "atSeconds": 0,
+        "id": "event-1",
+        "packageId": "pkg-1",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-2",
+        "packageId": "pkg-1",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "id": "event-3",
+        "packageId": "pkg-2",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-4",
+        "packageId": "pkg-2",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-5",
+        "packageId": "pkg-1",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-6",
+        "packageId": "pkg-2",
+        "type": "package_picked_up"
+      }
+    ],
+    "map": {
+      "locations": [
+        {
+          "id": "depot",
+          "kind": "depot",
+          "label": "DEPOT",
+          "x": 11.46,
+          "y": 54.69
+        },
+        {
+          "id": "junction",
+          "kind": "junction",
+          "label": "JUNCTION",
+          "x": 40.63,
+          "y": 54.69
+        },
+        {
+          "id": "home",
+          "kind": "home",
+          "label": "HOME",
+          "x": 82.29,
+          "y": 22.66
+        },
+        {
+          "id": "shop",
+          "kind": "shop",
+          "label": "SHOP",
+          "x": 76.56,
+          "y": 82.03
+        }
+      ],
+      "roads": [
+        {
+          "closed": false,
+          "from": "depot",
+          "id": "depot-junction",
+          "to": "junction"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-home",
+          "to": "home"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-shop",
+          "to": "shop"
+        }
+      ]
+    },
+    "nextEventNumber": 7,
+    "nextPackageNumber": 3,
+    "packages": [
+      {
+        "courierId": "courier-1",
+        "createdOrder": 1,
+        "from": "depot",
+        "id": "pkg-1",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "in_transit",
+        "to": "home"
+      },
+      {
+        "courierId": "courier-2",
+        "createdOrder": 2,
+        "from": "depot",
+        "id": "pkg-2",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "in_transit",
+        "to": "shop"
+      }
+    ]
+  },
+  "switchProof": {
+    "inferenceCalls": 0,
+    "sceneReady": true,
+    "selection": "courier:courier-1",
+    "stateUnchanged": true
+  },
+  "typicalPerf": {
+    "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Ravylo(Alpha)/0.1.51 Chrome/152.0.7977.65 Electron/44.1.0 Safari/537.36",
+    "dpr": 1.25,
+    "meanFrameMs": 6.060497237569125,
+    "medianFrameMs": 6.099999999976717,
+    "memory": {
+      "geometries": 22,
+      "textures": 10
+    },
+    "method": "2.2s requestAnimationFrame while invalidating same paused3Dscene; not GPU timing or production claim",
+    "p95FrameMs": 6.199999999953434,
+    "render": {
+      "calls": 88,
+      "frame": 369,
+      "lines": 38,
+      "points": 0,
+      "triangles": 1862
+    },
+    "renderer": "ANGLE (Intel, Intel(R) Arc(TM) Graphics (0x00007D55) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "sample": 362,
+    "viewport": {
+      "height": 800,
+      "width": 1280
+    }
+  },
+  "voiceCompleted3D": {
+    "couriers": [
+      {
+        "capacity": 2,
+        "id": "courier-1",
+        "locationId": "shop",
+        "name": "Mina",
+        "packageIds": [],
+        "segment": null
+      },
+      {
+        "capacity": 2,
+        "id": "courier-2",
+        "locationId": "shop",
+        "name": "Rook",
+        "packageIds": [],
+        "segment": null
+      }
+    ],
+    "distanceTraveled": 416.56810749173695,
+    "elapsedSeconds": 60.1875,
+    "events": [
+      {
+        "atSeconds": 0,
+        "id": "event-1",
+        "packageId": "pkg-1",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-2",
+        "packageId": "pkg-1",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "id": "event-3",
+        "packageId": "pkg-2",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-4",
+        "packageId": "pkg-2",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-5",
+        "packageId": "pkg-1",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-6",
+        "packageId": "pkg-2",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 0.18750000000000003,
+        "id": "event-7",
+        "type": "map_updated"
+      },
+      {
+        "atSeconds": 0.18750000000000003,
+        "courierId": "courier-1",
+        "id": "event-8",
+        "packageId": "pkg-1",
+        "type": "package_unreachable"
+      },
+      {
+        "atSeconds": 4.1875,
+        "id": "event-9",
+        "type": "map_updated"
+      },
+      {
+        "atSeconds": 4.1875,
+        "courierId": "courier-1",
+        "id": "event-10",
+        "packageId": "pkg-1",
+        "type": "package_resumed"
+      },
+      {
+        "atSeconds": 7.431909190670395,
+        "courierId": "courier-2",
+        "id": "event-11",
+        "packageId": "pkg-2",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 14.66699618391645,
+        "courierId": "courier-1",
+        "id": "event-12",
+        "packageId": "pkg-1",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 20.1875,
+        "id": "event-13",
+        "packageId": "pkg-3",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 20.1875,
+        "courierId": "courier-1",
+        "id": "event-14",
+        "packageId": "pkg-3",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 33.58399618391645,
+        "courierId": "courier-1",
+        "id": "event-15",
+        "packageId": "pkg-3",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 41.01590537458684,
+        "courierId": "courier-1",
+        "id": "event-16",
+        "packageId": "pkg-3",
+        "type": "package_delivered"
+      }
+    ],
+    "map": {
+      "locations": [
+        {
+          "id": "depot",
+          "kind": "depot",
+          "label": "DEPOT",
+          "x": 11.46,
+          "y": 54.69
+        },
+        {
+          "id": "junction",
+          "kind": "junction",
+          "label": "JUNCTION",
+          "x": 40.63,
+          "y": 54.69
+        },
+        {
+          "id": "home",
+          "kind": "home",
+          "label": "HOME",
+          "x": 82.29,
+          "y": 22.66
+        },
+        {
+          "id": "shop",
+          "kind": "shop",
+          "label": "SHOP",
+          "x": 76.56,
+          "y": 82.03
+        }
+      ],
+      "roads": [
+        {
+          "closed": false,
+          "from": "depot",
+          "id": "depot-junction",
+          "to": "junction"
+        },
+        {
+          "closed": true,
+          "from": "junction",
+          "id": "junction-home",
+          "to": "home"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-shop",
+          "to": "shop"
+        },
+        {
+          "closed": false,
+          "from": "home",
+          "id": "home-shop",
+          "to": "shop"
+        }
+      ]
+    },
+    "nextEventNumber": 17,
+    "nextPackageNumber": 4,
+    "packages": [
+      {
+        "courierId": "courier-1",
+        "createdOrder": 1,
+        "from": "depot",
+        "id": "pkg-1",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "delivered",
+        "to": "home"
+      },
+      {
+        "courierId": "courier-2",
+        "createdOrder": 2,
+        "from": "depot",
+        "id": "pkg-2",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "delivered",
+        "to": "shop"
+      },
+      {
+        "courierId": "courier-1",
+        "createdOrder": 3,
+        "from": "depot",
+        "id": "pkg-3",
+        "pickedUp": true,
+        "priority": "urgent",
+        "source": "user",
+        "status": "delivered",
+        "to": "shop"
+      }
+    ]
+  },
+  "waiting3D": {
+    "couriers": [
+      {
+        "capacity": 2,
+        "id": "courier-1",
+        "locationId": "junction",
+        "name": "Mina",
+        "packageIds": [
+          "pkg-1"
+        ],
+        "segment": null
+      },
+      {
+        "capacity": 2,
+        "id": "courier-2",
+        "locationId": "junction",
+        "name": "Rook",
+        "packageIds": [
+          "pkg-2"
+        ],
+        "segment": {
+          "distance": 45.14909190670395,
+          "from": "junction",
+          "fromX": 40.63,
+          "fromY": 54.69,
+          "progress": 12.704999999999998,
+          "roadId": "junction-shop",
+          "to": "shop",
+          "toX": 76.56,
+          "toY": 82.03
+        }
+      }
+    ],
+    "distanceTraveled": 71.045,
+    "elapsedSeconds": 4.1875,
+    "events": [
+      {
+        "atSeconds": 0,
+        "id": "event-1",
+        "packageId": "pkg-1",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-2",
+        "packageId": "pkg-1",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "id": "event-3",
+        "packageId": "pkg-2",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-4",
+        "packageId": "pkg-2",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-5",
+        "packageId": "pkg-1",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-6",
+        "packageId": "pkg-2",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 0.18750000000000003,
+        "id": "event-7",
+        "type": "map_updated"
+      },
+      {
+        "atSeconds": 0.18750000000000003,
+        "courierId": "courier-1",
+        "id": "event-8",
+        "packageId": "pkg-1",
+        "type": "package_unreachable"
+      }
+    ],
+    "map": {
+      "locations": [
+        {
+          "id": "depot",
+          "kind": "depot",
+          "label": "DEPOT",
+          "x": 11.46,
+          "y": 54.69
+        },
+        {
+          "id": "junction",
+          "kind": "junction",
+          "label": "JUNCTION",
+          "x": 40.63,
+          "y": 54.69
+        },
+        {
+          "id": "home",
+          "kind": "home",
+          "label": "HOME",
+          "x": 82.29,
+          "y": 22.66
+        },
+        {
+          "id": "shop",
+          "kind": "shop",
+          "label": "SHOP",
+          "x": 76.56,
+          "y": 82.03
+        }
+      ],
+      "roads": [
+        {
+          "closed": false,
+          "from": "depot",
+          "id": "depot-junction",
+          "to": "junction"
+        },
+        {
+          "closed": true,
+          "from": "junction",
+          "id": "junction-home",
+          "to": "home"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-shop",
+          "to": "shop"
+        }
+      ]
+    },
+    "nextEventNumber": 9,
+    "nextPackageNumber": 3,
+    "packages": [
+      {
+        "courierId": "courier-1",
+        "createdOrder": 1,
+        "from": "depot",
+        "id": "pkg-1",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "unreachable",
+        "to": "home"
+      },
+      {
+        "courierId": "courier-2",
+        "createdOrder": 2,
+        "from": "depot",
+        "id": "pkg-2",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "in_transit",
+        "to": "shop"
+      }
+    ]
+  }
+}

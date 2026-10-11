@@ -1,0 +1,595 @@
+{
+  "completed": {
+    "couriers": [
+      {
+        "capacity": 2,
+        "id": "courier-1",
+        "locationId": "shop-north",
+        "name": "Mina",
+        "packageIds": [],
+        "segment": null
+      },
+      {
+        "capacity": 2,
+        "id": "courier-2",
+        "locationId": "junction-west",
+        "name": "Rook",
+        "packageIds": [],
+        "segment": null
+      }
+    ],
+    "distanceTraveled": 335.5132384411638,
+    "elapsedSeconds": 55,
+    "events": [
+      {
+        "atSeconds": 0,
+        "id": "event-1",
+        "packageId": "pkg-1",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-2",
+        "packageId": "pkg-1",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "id": "event-3",
+        "packageId": "pkg-2",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-4",
+        "packageId": "pkg-2",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "id": "event-5",
+        "packageId": "pkg-3",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-6",
+        "packageId": "pkg-3",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-7",
+        "packageId": "pkg-3",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 4.172529209005012,
+        "courierId": "courier-1",
+        "id": "event-8",
+        "packageId": "pkg-1",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 4.313930922024598,
+        "courierId": "courier-2",
+        "id": "event-9",
+        "packageId": "pkg-2",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 12.870502531168482,
+        "courierId": "courier-2",
+        "id": "event-10",
+        "packageId": "pkg-2",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 14.648233020580614,
+        "courierId": "courier-1",
+        "id": "event-11",
+        "packageId": "pkg-1",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 20.680821312947895,
+        "courierId": "courier-1",
+        "id": "event-12",
+        "packageId": "pkg-3",
+        "type": "package_delivered"
+      }
+    ],
+    "map": {
+      "locations": [
+        {
+          "id": "depot",
+          "kind": "depot",
+          "label": "Depot",
+          "x": 47,
+          "y": 47
+        },
+        {
+          "id": "home-north",
+          "kind": "home",
+          "label": "North home",
+          "x": 18,
+          "y": 17
+        },
+        {
+          "id": "shop-north",
+          "kind": "shop",
+          "label": "North shop",
+          "x": 78,
+          "y": 17
+        },
+        {
+          "id": "junction-west",
+          "kind": "junction",
+          "label": "West junction",
+          "x": 17,
+          "y": 77
+        },
+        {
+          "id": "junction-south",
+          "kind": "junction",
+          "label": "South junction",
+          "x": 48,
+          "y": 78
+        },
+        {
+          "id": "home-east",
+          "kind": "home",
+          "label": "East home",
+          "x": 80,
+          "y": 77
+        },
+        {
+          "id": "shop-east",
+          "kind": "shop",
+          "label": "East shop",
+          "x": 82,
+          "y": 48
+        }
+      ],
+      "roads": [
+        {
+          "closed": false,
+          "from": "depot",
+          "id": "road-1",
+          "to": "home-north"
+        },
+        {
+          "closed": false,
+          "from": "depot",
+          "id": "road-2",
+          "to": "shop-north"
+        },
+        {
+          "closed": false,
+          "from": "depot",
+          "id": "road-3",
+          "to": "junction-west"
+        },
+        {
+          "closed": false,
+          "from": "depot",
+          "id": "road-4",
+          "to": "junction-south"
+        },
+        {
+          "closed": true,
+          "from": "depot",
+          "id": "road-5",
+          "to": "shop-east"
+        },
+        {
+          "closed": false,
+          "from": "junction-west",
+          "id": "road-6",
+          "to": "junction-south"
+        },
+        {
+          "closed": false,
+          "from": "junction-south",
+          "id": "road-7",
+          "to": "home-east"
+        },
+        {
+          "closed": false,
+          "from": "shop-east",
+          "id": "road-8",
+          "to": "home-east"
+        },
+        {
+          "closed": false,
+          "from": "shop-north",
+          "id": "road-9",
+          "to": "shop-east"
+        }
+      ]
+    },
+    "nextEventNumber": 13,
+    "nextPackageNumber": 4,
+    "packages": [
+      {
+        "courierId": "courier-1",
+        "createdOrder": 1,
+        "from": "home-north",
+        "id": "pkg-1",
+        "pickedUp": true,
+        "priority": "urgent",
+        "status": "delivered",
+        "to": "home-east"
+      },
+      {
+        "courierId": "courier-2",
+        "createdOrder": 2,
+        "from": "shop-north",
+        "id": "pkg-2",
+        "pickedUp": true,
+        "priority": "normal",
+        "status": "delivered",
+        "to": "junction-west"
+      },
+      {
+        "courierId": "courier-1",
+        "createdOrder": 3,
+        "from": "depot",
+        "id": "pkg-3",
+        "pickedUp": true,
+        "priority": "urgent",
+        "source": "user",
+        "status": "delivered",
+        "to": "shop-north"
+      }
+    ]
+  },
+  "failure": {
+    "calls": [
+      "/api/command"
+    ],
+    "stateUnchanged": true,
+    "text": "The provider request failed. No changes were applied; try again.\n\nRetry\nUse Codex\nWhat should happen?\n\nAsk for a delivery or change a route. Review before applying.\n\nAuto\nGive a delivery instruction\n◉\nDictate\nReview command\n↗\n\nDictation: stopped. Speech recognition may process audio. Review the transcript before sending.\n\nMore controls\nManual dispatch · provider status"
+  },
+  "recoveryReceipt": {
+    "clarification": null,
+    "commands": [
+      {
+        "courierId": "courier-1",
+        "from": "depot",
+        "priority": "urgent",
+        "to": "shop-north",
+        "type": "dispatch-delivery"
+      }
+    ],
+    "latencyMs": 5165,
+    "model": "Codex default (model not reported)",
+    "provider": "codex"
+  },
+  "requests": [
+    {
+      "body": {
+        "couriers": [
+          {
+            "capacity": 2,
+            "id": "courier-1",
+            "locationId": "depot",
+            "name": "Mina",
+            "packageIds": [
+              "pkg-1"
+            ],
+            "segment": null
+          },
+          {
+            "capacity": 2,
+            "id": "courier-2",
+            "locationId": "depot",
+            "name": "Rook",
+            "packageIds": [
+              "pkg-2"
+            ],
+            "segment": null
+          }
+        ],
+        "map": {
+          "locations": [
+            {
+              "id": "depot",
+              "kind": "depot",
+              "label": "Depot",
+              "x": 47,
+              "y": 47
+            },
+            {
+              "id": "home-north",
+              "kind": "home",
+              "label": "North home",
+              "x": 18,
+              "y": 17
+            },
+            {
+              "id": "shop-north",
+              "kind": "shop",
+              "label": "North shop",
+              "x": 78,
+              "y": 17
+            },
+            {
+              "id": "junction-west",
+              "kind": "junction",
+              "label": "West junction",
+              "x": 17,
+              "y": 77
+            },
+            {
+              "id": "junction-south",
+              "kind": "junction",
+              "label": "South junction",
+              "x": 48,
+              "y": 78
+            },
+            {
+              "id": "home-east",
+              "kind": "home",
+              "label": "East home",
+              "x": 80,
+              "y": 77
+            },
+            {
+              "id": "shop-east",
+              "kind": "shop",
+              "label": "East shop",
+              "x": 82,
+              "y": 48
+            }
+          ],
+          "roads": [
+            {
+              "closed": false,
+              "from": "depot",
+              "id": "road-1",
+              "to": "home-north"
+            },
+            {
+              "closed": false,
+              "from": "depot",
+              "id": "road-2",
+              "to": "shop-north"
+            },
+            {
+              "closed": false,
+              "from": "depot",
+              "id": "road-3",
+              "to": "junction-west"
+            },
+            {
+              "closed": false,
+              "from": "depot",
+              "id": "road-4",
+              "to": "junction-south"
+            },
+            {
+              "closed": true,
+              "from": "depot",
+              "id": "road-5",
+              "to": "shop-east"
+            },
+            {
+              "closed": false,
+              "from": "junction-west",
+              "id": "road-6",
+              "to": "junction-south"
+            },
+            {
+              "closed": false,
+              "from": "junction-south",
+              "id": "road-7",
+              "to": "home-east"
+            },
+            {
+              "closed": false,
+              "from": "shop-east",
+              "id": "road-8",
+              "to": "home-east"
+            },
+            {
+              "closed": false,
+              "from": "shop-north",
+              "id": "road-9",
+              "to": "shop-east"
+            }
+          ]
+        },
+        "mode": "auto",
+        "packages": [
+          {
+            "courierId": "courier-1",
+            "createdOrder": 1,
+            "from": "home-north",
+            "id": "pkg-1",
+            "pickedUp": false,
+            "priority": "urgent",
+            "status": "assigned",
+            "to": "home-east"
+          },
+          {
+            "courierId": "courier-2",
+            "createdOrder": 2,
+            "from": "shop-north",
+            "id": "pkg-2",
+            "pickedUp": false,
+            "priority": "normal",
+            "status": "assigned",
+            "to": "junction-west"
+          }
+        ],
+        "text": "Send an urgent delivery from Depot to North shop"
+      },
+      "url": "/api/command"
+    },
+    {
+      "body": {
+        "couriers": [
+          {
+            "capacity": 2,
+            "id": "courier-1",
+            "locationId": "depot",
+            "name": "Mina",
+            "packageIds": [
+              "pkg-1"
+            ],
+            "segment": null
+          },
+          {
+            "capacity": 2,
+            "id": "courier-2",
+            "locationId": "depot",
+            "name": "Rook",
+            "packageIds": [
+              "pkg-2"
+            ],
+            "segment": null
+          }
+        ],
+        "map": {
+          "locations": [
+            {
+              "id": "depot",
+              "kind": "depot",
+              "label": "Depot",
+              "x": 47,
+              "y": 47
+            },
+            {
+              "id": "home-north",
+              "kind": "home",
+              "label": "North home",
+              "x": 18,
+              "y": 17
+            },
+            {
+              "id": "shop-north",
+              "kind": "shop",
+              "label": "North shop",
+              "x": 78,
+              "y": 17
+            },
+            {
+              "id": "junction-west",
+              "kind": "junction",
+              "label": "West junction",
+              "x": 17,
+              "y": 77
+            },
+            {
+              "id": "junction-south",
+              "kind": "junction",
+              "label": "South junction",
+              "x": 48,
+              "y": 78
+            },
+            {
+              "id": "home-east",
+              "kind": "home",
+              "label": "East home",
+              "x": 80,
+              "y": 77
+            },
+            {
+              "id": "shop-east",
+              "kind": "shop",
+              "label": "East shop",
+              "x": 82,
+              "y": 48
+            }
+          ],
+          "roads": [
+            {
+              "closed": false,
+              "from": "depot",
+              "id": "road-1",
+              "to": "home-north"
+            },
+            {
+              "closed": false,
+              "from": "depot",
+              "id": "road-2",
+              "to": "shop-north"
+            },
+            {
+              "closed": false,
+              "from": "depot",
+              "id": "road-3",
+              "to": "junction-west"
+            },
+            {
+              "closed": false,
+              "from": "depot",
+              "id": "road-4",
+              "to": "junction-south"
+            },
+            {
+              "closed": true,
+              "from": "depot",
+              "id": "road-5",
+              "to": "shop-east"
+            },
+            {
+              "closed": false,
+              "from": "junction-west",
+              "id": "road-6",
+              "to": "junction-south"
+            },
+            {
+              "closed": false,
+              "from": "junction-south",
+              "id": "road-7",
+              "to": "home-east"
+            },
+            {
+              "closed": false,
+              "from": "shop-east",
+              "id": "road-8",
+              "to": "home-east"
+            },
+            {
+              "closed": false,
+              "from": "shop-north",
+              "id": "road-9",
+              "to": "shop-east"
+            }
+          ]
+        },
+        "mode": "codex",
+        "packages": [
+          {
+            "courierId": "courier-1",
+            "createdOrder": 1,
+            "from": "home-north",
+            "id": "pkg-1",
+            "pickedUp": false,
+            "priority": "urgent",
+            "status": "assigned",
+            "to": "home-east"
+          },
+          {
+            "courierId": "courier-2",
+            "createdOrder": 2,
+            "from": "shop-north",
+            "id": "pkg-2",
+            "pickedUp": false,
+            "priority": "normal",
+            "status": "assigned",
+            "to": "junction-west"
+          }
+        ],
+        "text": "Send an urgent delivery from Depot to North shop"
+      },
+      "url": "/api/command"
+    }
+  ]
+}

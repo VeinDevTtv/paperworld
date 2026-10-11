@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useRef, useState } from "react";
+
+const DeliveryWorld3D = dynamic(() => import("./delivery-world-3d"), { ssr: false, loading: () => <div className="world-loading" role="status">Building your 3D world…</div> });
 
 export type LocationKind = "depot" | "home" | "shop" | "junction";
 
@@ -42,6 +45,7 @@ export type CourierMarker = {
   pinnedSegment?: { fromX: number; fromY: number; toX: number; toY: number } | null;
   nextActionLabel?: string | null;
   waitingReason?: string;
+  heading?: number;
 };
 
 type DeliveryWorldProps = {
@@ -50,13 +54,17 @@ type DeliveryWorldProps = {
   couriers?: CourierMarker[];
   roadChanges?: ReadonlyMap<string, RoadChangeKind>;
   onToggleRoad: (roadId: string) => string | null;
+  mapRevision?: number;
+  worldBirthRevision?: number;
+  deliveredEvents?: { id: string; courierId?: string }[];
 };
 
-type Selection =
+export type WorldSelection =
   | { kind: "location"; id: string }
   | { kind: "road"; id: string }
   | { kind: "courier"; id: string };
 
+const EMPTY_DELIVERED_EVENTS: { id: string; courierId?: string }[] = [];
 const VIEWBOX_WIDTH = 1000;
 const VIEWBOX_HEIGHT = 560;
 
@@ -121,8 +129,48 @@ function LocationGlyph({ kind }: { kind: LocationKind }) {
   return <circle r="3" className="junction-core" />;
 }
 
-export function DeliveryWorld({ locations, roads, couriers = [], roadChanges = new Map(), onToggleRoad }: DeliveryWorldProps) {
-  const [selection, setSelection] = useState<Selection | null>(null);
+export function DeliveryWorld({ locations, roads, couriers = [], roadChanges = new Map(), onToggleRoad, mapRevision = 0, worldBirthRevision = 0, deliveredEvents = EMPTY_DELIVERED_EVENTS }: DeliveryWorldProps) {
+  const [selection, setSelection] = useState<WorldSelection | null>(null);
+  const [view, setView] = useState<"3d" | "2d">("3d");
+  const [viewNotice, setViewNotice] = useState<string | null>(null);
+  const [resetView, setResetView] = useState(0);
+  const roadBirthTimes = useRef(new Map<string, number>());
+  const previousRoadIds = useRef(new Set<string>());
+  const roadAnimationTimes = useRef(new Map<string, number>());
+  const birthTimes = useRef(new Map<string, number>());
+  const buildingOffsetCache = useRef(new Map<string, { birth?: number; offset: [number, number, number] }>());
+  const previousBirthRevision = useRef(worldBirthRevision);
+  const previousIds = useRef(new Set<string>());
+  const celebrationTimes = useRef(new Map<string, number>());
+  const seenDelivered = useRef(new Set<string>());
+  const [, refreshEffects] = useState(0);
+  useEffect(() => {
+    const freshWorld = previousBirthRevision.current !== worldBirthRevision;
+    previousBirthRevision.current = worldBirthRevision;
+    if (freshWorld) { buildingOffsetCache.current.clear(); birthTimes.current.clear(); roadAnimationTimes.current.clear(); roadBirthTimes.current.clear(); }
+    const nextIds = new Set(locations.map((location) => location.id));
+    for (const id of nextIds) if (freshWorld || !previousIds.current.has(id)) birthTimes.current.set(id, Date.now());
+    previousIds.current = nextIds;
+    for (const road of roads) {
+      if (freshWorld || !previousRoadIds.current.has(road.id)) roadBirthTimes.current.set(road.id, Date.now());
+      if (freshWorld || !previousRoadIds.current.has(road.id) || roadChanges.has(road.id)) roadAnimationTimes.current.set(road.id, Date.now());
+    }
+    previousRoadIds.current = new Set(roads.map((road) => road.id));
+    refreshEffects((value) => value + 1);
+  }, [mapRevision, worldBirthRevision]);
+  useEffect(() => {
+    for (const event of deliveredEvents) {
+      if (seenDelivered.current.has(event.id)) continue;
+      seenDelivered.current.add(event.id);
+      if (event.courierId) celebrationTimes.current.set(event.courierId, Date.now());
+    }
+    if (!deliveredEvents.length) { seenDelivered.current.clear(); celebrationTimes.current.clear(); }
+    refreshEffects((value) => value + 1);
+  }, [deliveredEvents]);
+  function showFallback() {
+    setView("2d");
+    setViewNotice("3D graphics became unavailable. The same delivery run continues in 2D.");
+  }
   const [roadError, setRoadError] = useState<string | null>(null);
   const locationById = new Map(locations.map((location) => [location.id, location]));
   const selectedLocation = selection?.kind === "location"
@@ -171,7 +219,13 @@ export function DeliveryWorld({ locations, roads, couriers = [], roadChanges = n
         </div>
       </div>
 
-      <div className="map-canvas">
+      <div className="world-view-controls">
+        <div className="world-view-switch" aria-label="World view"><button type="button" aria-pressed={view === "3d"} onClick={() => { setView("3d"); setViewNotice(null); }}>3D world</button><button type="button" aria-pressed={view === "2d"} onClick={() => setView("2d")}>2D map</button></div>
+        {view === "3d" ? <button className="world-reset-view" type="button" onClick={() => setResetView((value) => value + 1)}>Reset view</button> : null}
+        <label className="world-inspect-select"><span className="visually-hidden">Inspect a stop, road, or courier</span><select aria-label="Inspect world object" value={selection ? `${selection.kind}:${selection.id}` : ""} onChange={(event) => { const [kind, ...parts] = event.target.value.split(":"); setSelection(kind ? { kind: kind as WorldSelection["kind"], id: parts.join(":") } : null); }}><option value="">Inspect…</option><optgroup label="Couriers">{couriers.map((courier) => <option key={courier.id} value={`courier:${courier.id}`}>{courier.label}</option>)}</optgroup><optgroup label="Stops">{locations.map((location) => <option key={location.id} value={`location:${location.id}`}>{location.label}</option>)}</optgroup><optgroup label="Roads">{roads.map((road) => <option key={road.id} value={`road:${road.id}`}>{locationById.get(road.from)?.label} – {locationById.get(road.to)?.label} · {road.id}</option>)}</optgroup></select></label>
+      </div>
+      {viewNotice ? <p className="world-view-notice" role="status">{viewNotice}</p> : null}
+      {view === "3d" ? <div className="world-3d-stage" aria-label="Interactive 3D paper town"><DeliveryWorld3D locations={locations} roads={roads} couriers={couriers} roadChanges={roadChanges} selection={selection} onSelect={setSelection} onUnavailable={showFallback} resetView={resetView} births={birthTimes.current} buildingOffsetCache={buildingOffsetCache.current} celebrations={celebrationTimes.current} roadAnimations={roadAnimationTimes.current} roadBirths={roadBirthTimes.current} /><span className="world-gesture-hint">Drag to orbit · scroll or pinch to zoom</span></div> : <div className="map-canvas">
         <svg
           className="delivery-map"
           viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
@@ -193,11 +247,6 @@ export function DeliveryWorld({ locations, roads, couriers = [], roadChanges = n
           <rect width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="url(#world-grid)" />
           <rect width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="url(#world-grid-major)" />
 
-          <g className="map-area-labels" aria-hidden="true">
-            <text x="90" y="100">NORTH DISTRICT</text>
-            <text x="690" y="385">RIVER WARD</text>
-            <text x="85" y="530">SOUTH DISTRICT</text>
-          </g>
 
           <g aria-label="Roads">
             {roads.map((road) => {
@@ -364,10 +413,10 @@ export function DeliveryWorld({ locations, roads, couriers = [], roadChanges = n
           </g>
         </svg>
         <div className="map-scale" aria-hidden="true"><span /><span>1 grid unit</span></div>
-      </div>
+      </div>}
 
       <div className="map-bottom">
-        <div className="map-legend" aria-label="Map legend">
+        <div className={`map-legend ${view === "3d" ? "map-legend-3d" : ""}`} aria-label={view === "3d" ? "3D world legend" : "2D map legend"}>
           <span className="legend-item"><span className="legend-icon legend-depot" aria-hidden="true" />Depot</span>
           <span className="legend-item"><span className="legend-icon legend-home" aria-hidden="true" />Home</span>
           <span className="legend-item"><span className="legend-icon legend-shop" aria-hidden="true" />Shop</span>
@@ -385,7 +434,7 @@ export function DeliveryWorld({ locations, roads, couriers = [], roadChanges = n
             <>
               <span className="readout-type">ROAD</span>
               <strong>{locationById.get(selectedRoad.from)?.label ?? selectedRoad.from} → {locationById.get(selectedRoad.to)?.label ?? selectedRoad.to}</strong>
-              <span>{selectedRoad.closed ? "Closed" : "Open"}</span>
+              <span>{selectedRoad.closed ? "Closed" : "Open"}{roadChanges.get(selectedRoad.id) === "new" ? " · New connection" : roadChanges.has(selectedRoad.id) ? " · Changed connection" : ""}</span>
               <button
                 className="road-toggle-button"
                 type="button"

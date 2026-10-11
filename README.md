@@ -1,6 +1,6 @@
 # Paperworld
 
-A localhost-only hackathon app that turns a labeled paper drawing into an animated courier delivery simulation. Next.js, TypeScript, Tailwind and SVG; Node handles providers. No accounts, database or billing subsystem. MIT licensed.
+A localhost-only hackathon app that turns a labeled paper drawing into a miniature paper town with working couriers. Next.js, TypeScript, Tailwind, Three.js and React Three Fiber; Node handles providers. A working 2D SVG view remains available. No accounts, database or billing subsystem. MIT licensed.
 
 ## Start
 

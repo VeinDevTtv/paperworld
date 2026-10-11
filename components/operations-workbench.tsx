@@ -69,17 +69,21 @@ function commandRouteSummary(proposal: CommandProposal) {
   return `Jev${target} · ${commandRouteLabels[proposal.routeCategory]}`;
 }
 
-function commandDescription(command: Command, map: PaperMap) {
+function commandDescription(command: Command, map: PaperMap, couriers: SimulationState["couriers"]) {
+  const courierName = (id: string) => {
+    const name = couriers.find((courier) => courier.id === id)?.name;
+    return name ? `${name} (${id})` : id;
+  };
   const locationName = (id: string) => map.locations.find((location) => location.id === id)?.label ?? id;
   if (command.type === "create-package") {
     return `Create ${command.priority} package · ${locationName(command.from)} → ${locationName(command.to)}`;
   }
   if (command.type === "dispatch-delivery") {
-    return `Create and dispatch ${command.priority} delivery · ${locationName(command.from)} → ${locationName(command.to)} · ${command.courierId ? `courier ${command.courierId}` : "auto-assign courier"}`;
+    return `Create and dispatch ${command.priority} delivery · ${locationName(command.from)} → ${locationName(command.to)} · ${command.courierId ? `courier ${courierName(command.courierId)}` : "auto-assign courier"}`;
   }
   if (command.type === "set-priority") return `Set ${command.packageId} priority · ${command.priority}`;
   if (command.type === "set-road") return `${command.closed ? "Close" : "Open"} road · ${command.roadId}`;
-  return `Assign ${command.packageId} to ${command.courierId}`;
+  return `Assign ${command.packageId} to ${courierName(command.courierId)}`;
 }
 
 function errorMessage(payload: unknown, status: number) {
@@ -463,7 +467,7 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
       <div className="command-bar-heading">
         <div>
           <h2 id="command-bar-title">What should happen?</h2>
-          <p>Describe a delivery or a short sequence of route changes. Review each proposal before applying.</p>
+          <p>Ask for a delivery or change a route. Review before applying.</p>
         </div>
         <span className={`command-auto-status ${providerLoading ? "is-loading" : selectedCommandReady ? "is-ready" : "is-unavailable"}`}>
           <i aria-hidden="true" />{providerLoading ? "Checking" : selectedCommandReady ? "Auto" : "Check providers"}
@@ -504,7 +508,7 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
           <ol className="command-proposal-list">
             {proposal.commands.map((command, index) => <li key={`${command.type}-${index}`}>
               <span className="command-index">{String(index + 1).padStart(2, "0")}</span>
-              <span>{commandDescription(command, simulation.map)}</span>
+              <span>{commandDescription(command, simulation.map, simulation.couriers)}</span>
               <button type="button" aria-label={`Remove proposed change ${index + 1}`} onClick={() => setProposal((current) => current ? { ...current, commands: current.commands.filter((_, commandIndex) => commandIndex !== index) } : current)}>Remove</button>
             </li>)}
           </ol>

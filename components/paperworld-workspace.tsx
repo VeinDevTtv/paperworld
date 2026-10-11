@@ -153,6 +153,8 @@ export function PaperworldWorkspace() {
   const [playbackSpeed, setPlaybackSpeed] = useState<0.25 | 1 | 4>(0.25);
   const [worldRevision, setWorldRevision] = useState(0);
   const [mapRevision, setMapRevision] = useState(0);
+  const [worldBirthRevision, setWorldBirthRevision] = useState(0);
+  const presentedMap = useMemo(() => simulation.map, [mapRevision]);
   const [roadChanges, setRoadChanges] = useState<ReadonlyMap<string, RoadChangeKind>>(() => new Map());
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
@@ -167,8 +169,8 @@ export function PaperworldWorkspace() {
   useEffect(() => {
     if (!isPlaying) return;
     const interval = window.setInterval(() => {
-      updateSimulation((current) => tick(current, 0.25 * playbackSpeed));
-    }, 250);
+      updateSimulation((current) => tick(current, 0.05 * playbackSpeed));
+    }, 50);
     return () => window.clearInterval(interval);
   }, [isPlaying, playbackSpeed, updateSimulation]);
 
@@ -240,6 +242,7 @@ export function PaperworldWorkspace() {
       return {
         id: courier.id,
         label: courier.name,
+        heading: courier.segment ? Math.atan2(courier.segment.toX - courier.segment.fromX, courier.segment.toY - courier.segment.fromY) : 0,
         x: position.x,
         y: position.y,
         activePackage: activePackage ? {
@@ -289,11 +292,13 @@ export function PaperworldWorkspace() {
     () => [...simulation.packages].sort((left, right) => right.createdOrder - left.createdOrder),
     [simulation.packages],
   );
+  const deliveredEvents = useMemo(() => simulation.events.filter((event) => event.type === "package_delivered").map(({ id, courierId }) => ({ id, courierId })), [simulation.events]);
   const visibleEvents = useMemo(() => [...simulation.events].reverse().slice(0, 8), [simulation.events]);
 
   function applyProposedMap(map: PaperMap, startsFreshWorld: boolean) {
     const changes = getRoadChanges(simulationRef.current.map, map);
     if (startsFreshWorld) {
+      setWorldBirthRevision((revision) => revision + 1);
       setStartError(null);
       if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
       setDeliveryFeedback(null);
@@ -441,11 +446,14 @@ export function PaperworldWorkspace() {
               </div>
             </div>
             <DeliveryWorld
-              locations={simulation.map.locations}
-              roads={simulation.map.roads}
+              locations={presentedMap.locations}
+              roads={presentedMap.roads}
               couriers={courierMarkers}
               roadChanges={roadChanges}
               onToggleRoad={toggleRoad}
+              mapRevision={mapRevision}
+              deliveredEvents={deliveredEvents}
+              worldBirthRevision={worldBirthRevision}
             />
             <details className="run-controls">
               <summary>Playback controls <span>{playbackSpeed}× speed</span></summary>

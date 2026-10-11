@@ -8,6 +8,10 @@ Start `npm run dev` and open http://127.0.0.1:3000. Keep the existing local `.en
 
 ## Draw → scan → confirm
 
+The default view is a real interactive 3D paper diorama. Drag to orbit, scroll/pinch to zoom, and use **Reset view** to recover the composed camera. **2D map** is the working fallback; changing views preserves the run and makes no provider request. Buildings/roads appear only after map confirmation; this presentation animation is separate from completed image inference. Clicking a courier (or choosing it in **Inspect…**) shows its package, destination, and waiting reason.
+
+Camera access shows a waiting state and **Cancel camera**. If the permission request remains unanswered for20 seconds, the app offers a visible retry/upload recovery. Check the address-bar camera permission, or use a photo. A late stream after cancel/timeout is stopped rather than opening unexpectedly. On narrow screens zoom or use **Inspect…** for small labels; Reset view restores the full composition.
+
 Draw four clearly labeled stops with stable IDs: DEPOT D, JUNCTION J, HOME H, and SHOP S. Connect D–J, J–H, and J–S. Do not connect S–H yet. Choose **Upload photo** or **Use camera** → **Capture frame**, then **Read paper map**. Review the proposal and choose **Confirm map**. Correct any transcription before confirming.
 
 Choose **Start deliveries**. This creates clearly labeled demo packages from the scanned map and dispatches two couriers; no manual package setup is needed. Playback begins at 0.25× demo speed. Choose **Pause** after about four real seconds, before the home delivery completes. Open **Playback controls** and use **Step 1 second** when you need a precise moment.
