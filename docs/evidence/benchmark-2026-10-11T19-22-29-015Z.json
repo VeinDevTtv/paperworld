@@ -1,0 +1,2983 @@
+{
+  "evidence": "live providers / synthetic frozen state",
+  "createdAt": "2026-10-11T19-22-29-015Z",
+  "repeats": 1,
+  "caseCount": 12,
+  "retries": "none; failed attempts retained",
+  "criteria": "same typed server validation and atomic applyCommands; case-specific effects or clarification",
+  "rows": [
+    {
+      "case": "simple-priority",
+      "group": "simple",
+      "text": "Set package pkg-1 to urgent",
+      "repeat": 0,
+      "mode": "auto",
+      "passed": true,
+      "clarification": false,
+      "wallLatencyMs": 212,
+      "attempts": 1,
+      "retries": 0,
+      "model": "jev-1.13.0",
+      "proposal": {
+        "commands": [
+          {
+            "type": "set-priority",
+            "packageId": "pkg-1",
+            "priority": "urgent"
+          }
+        ],
+        "clarification": null,
+        "provider": "typesafe",
+        "model": "jev-1.13.0",
+        "latencyMs": 193,
+        "routedBy": "typesafe",
+        "routeCategory": "set_priority",
+        "routerLatencyMs": 193,
+        "routerModel": "jev-1.13.0",
+        "routerUsage": {
+          "input_tokens": 871,
+          "output_tokens": 154
+        },
+        "usage": {
+          "input_tokens": 871,
+          "output_tokens": 154
+        }
+      },
+      "validation": "accepted",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "simple-priority",
+      "group": "simple",
+      "text": "Set package pkg-1 to urgent",
+      "repeat": 0,
+      "mode": "codex",
+      "passed": true,
+      "clarification": false,
+      "wallLatencyMs": 4510,
+      "attempts": 1,
+      "retries": 0,
+      "model": "not reported",
+      "proposal": {
+        "commands": [
+          {
+            "type": "set-priority",
+            "packageId": "pkg-1",
+            "priority": "urgent"
+          }
+        ],
+        "clarification": null,
+        "provider": "codex",
+        "model": "Codex default (model not reported)",
+        "latencyMs": 4495
+      },
+      "validation": "accepted",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "simple-road",
+      "group": "simple",
+      "text": "Close road J-H",
+      "repeat": 0,
+      "mode": "codex",
+      "passed": true,
+      "clarification": false,
+      "wallLatencyMs": 5380,
+      "attempts": 1,
+      "retries": 0,
+      "model": "not reported",
+      "proposal": {
+        "commands": [
+          {
+            "type": "set-road",
+            "roadId": "J-H",
+            "closed": true
+          }
+        ],
+        "clarification": null,
+        "provider": "codex",
+        "model": "Codex default (model not reported)",
+        "latencyMs": 5348
+      },
+      "validation": "accepted",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "simple-road",
+      "group": "simple",
+      "text": "Close road J-H",
+      "repeat": 0,
+      "mode": "auto",
+      "passed": true,
+      "clarification": false,
+      "wallLatencyMs": 110,
+      "attempts": 1,
+      "retries": 0,
+      "model": "jev-1.13.0",
+      "proposal": {
+        "commands": [
+          {
+            "type": "set-road",
+            "roadId": "J-H",
+            "closed": true
+          }
+        ],
+        "clarification": null,
+        "provider": "typesafe",
+        "model": "jev-1.13.0",
+        "latencyMs": 101,
+        "routedBy": "typesafe",
+        "routeCategory": "set_road",
+        "routerLatencyMs": 101,
+        "routerModel": "jev-1.13.0",
+        "routerUsage": {
+          "input_tokens": 868,
+          "output_tokens": 155
+        },
+        "usage": {
+          "input_tokens": 868,
+          "output_tokens": 155
+        }
+      },
+      "validation": "accepted",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "simple-dispatch",
+      "group": "simple",
+      "text": "Send an urgent delivery from Depot to Shop",
+      "repeat": 0,
+      "mode": "auto",
+      "passed": true,
+      "clarification": false,
+      "wallLatencyMs": 94,
+      "attempts": 1,
+      "retries": 0,
+      "model": "jev-1.13.0",
+      "proposal": {
+        "commands": [
+          {
+            "type": "dispatch-delivery",
+            "from": "D",
+            "to": "S",
+            "priority": "urgent",
+            "courierId": "courier-1"
+          }
+        ],
+        "clarification": null,
+        "provider": "typesafe",
+        "model": "jev-1.13.0",
+        "latencyMs": 71,
+        "routedBy": "typesafe",
+        "routeCategory": "dispatch_delivery",
+        "routerLatencyMs": 71,
+        "routerModel": "jev-1.13.0",
+        "routerUsage": {
+          "input_tokens": 872,
+          "output_tokens": 154
+        },
+        "usage": {
+          "input_tokens": 872,
+          "output_tokens": 154
+        }
+      },
+      "validation": "accepted",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "simple-dispatch",
+      "group": "simple",
+      "text": "Send an urgent delivery from Depot to Shop",
+      "repeat": 0,
+      "mode": "codex",
+      "passed": true,
+      "clarification": false,
+      "wallLatencyMs": 4653,
+      "attempts": 1,
+      "retries": 0,
+      "model": "not reported",
+      "proposal": {
+        "commands": [
+          {
+            "type": "dispatch-delivery",
+            "from": "D",
+            "to": "S",
+            "priority": "urgent",
+            "courierId": "courier-1"
+          }
+        ],
+        "clarification": null,
+        "provider": "codex",
+        "model": "Codex default (model not reported)",
+        "latencyMs": 4646
+      },
+      "validation": "accepted",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "compound-two",
+      "group": "compound",
+      "text": "Set package pkg-1 to urgent and close road J-H",
+      "repeat": 0,
+      "mode": "codex",
+      "passed": true,
+      "clarification": false,
+      "wallLatencyMs": 4528,
+      "attempts": 1,
+      "retries": 0,
+      "model": "not reported",
+      "proposal": {
+        "commands": [
+          {
+            "type": "set-priority",
+            "packageId": "pkg-1",
+            "priority": "urgent"
+          },
+          {
+            "type": "set-road",
+            "roadId": "J-H",
+            "closed": true
+          }
+        ],
+        "clarification": null,
+        "provider": "codex",
+        "model": "Codex default (model not reported)",
+        "latencyMs": 4520
+      },
+      "validation": "accepted",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "compound-two",
+      "group": "compound",
+      "text": "Set package pkg-1 to urgent and close road J-H",
+      "repeat": 0,
+      "mode": "auto",
+      "passed": true,
+      "clarification": false,
+      "wallLatencyMs": 5963,
+      "attempts": 1,
+      "retries": 0,
+      "model": "not reported",
+      "proposal": {
+        "commands": [
+          {
+            "type": "set-priority",
+            "packageId": "pkg-1",
+            "priority": "urgent"
+          },
+          {
+            "type": "set-road",
+            "roadId": "J-H",
+            "closed": true
+          }
+        ],
+        "clarification": null,
+        "provider": "codex",
+        "model": "Codex default (model not reported)",
+        "latencyMs": 5962,
+        "routedBy": "typesafe",
+        "routeCategory": "delegate_to_codex",
+        "routerLatencyMs": 111,
+        "routerModel": "jev-1.13.0",
+        "routerUsage": {
+          "input_tokens": 876,
+          "output_tokens": 154
+        }
+      },
+      "validation": "accepted",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "compound-dispatch",
+      "group": "compound",
+      "text": "Close road J-H, then send a normal delivery from Depot to Shop",
+      "repeat": 0,
+      "mode": "auto",
+      "passed": false,
+      "clarification": false,
+      "wallLatencyMs": 1931,
+      "attempts": 1,
+      "retries": 0,
+      "model": "not reported",
+      "error": "provider_failed",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "compound-dispatch",
+      "group": "compound",
+      "text": "Close road J-H, then send a normal delivery from Depot to Shop",
+      "repeat": 0,
+      "mode": "codex",
+      "passed": false,
+      "clarification": false,
+      "wallLatencyMs": 2176,
+      "attempts": 1,
+      "retries": 0,
+      "model": "not reported",
+      "error": "provider_failed",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "ambiguous-destination",
+      "group": "ambiguous",
+      "text": "Send a delivery from Depot",
+      "repeat": 0,
+      "mode": "codex",
+      "passed": true,
+      "clarification": true,
+      "wallLatencyMs": 3994,
+      "attempts": 1,
+      "retries": 0,
+      "model": "not reported",
+      "proposal": {
+        "commands": [],
+        "clarification": "Where should the delivery from Depot go: Junction, Home, or Shop?",
+        "provider": "codex",
+        "model": "Codex default (model not reported)",
+        "latencyMs": 3989
+      },
+      "validation": "clarification",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "ambiguous-destination",
+      "group": "ambiguous",
+      "text": "Send a delivery from Depot",
+      "repeat": 0,
+      "mode": "auto",
+      "passed": true,
+      "clarification": true,
+      "wallLatencyMs": 108,
+      "attempts": 1,
+      "retries": 0,
+      "model": "jev-1.13.0",
+      "proposal": {
+        "commands": [],
+        "clarification": "Please state one operation clearly, such as create a package, change a package priority, open or close a road, or assign a package.",
+        "provider": "typesafe",
+        "model": "jev-1.13.0",
+        "latencyMs": 108,
+        "routedBy": "typesafe",
+        "routeCategory": "dispatch_delivery",
+        "routerLatencyMs": 108,
+        "routerModel": "jev-1.13.0",
+        "routerUsage": {
+          "input_tokens": 869,
+          "output_tokens": 156
+        },
+        "usage": {
+          "input_tokens": 869,
+          "output_tokens": 156
+        }
+      },
+      "validation": "clarification",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "ambiguous-package",
+      "group": "ambiguous",
+      "text": "Change a package priority",
+      "repeat": 0,
+      "mode": "auto",
+      "passed": true,
+      "clarification": true,
+      "wallLatencyMs": 83,
+      "attempts": 1,
+      "retries": 0,
+      "model": "jev-1.13.0",
+      "proposal": {
+        "commands": [],
+        "clarification": "Which existing package should change, and should its priority be normal or urgent?",
+        "provider": "typesafe",
+        "model": "jev-1.13.0",
+        "latencyMs": 82,
+        "routedBy": "typesafe",
+        "routeCategory": "set_priority",
+        "routerLatencyMs": 82,
+        "routerModel": "jev-1.13.0",
+        "routerUsage": {
+          "input_tokens": 868,
+          "output_tokens": 156
+        },
+        "usage": {
+          "input_tokens": 868,
+          "output_tokens": 156
+        }
+      },
+      "validation": "clarification",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "ambiguous-package",
+      "group": "ambiguous",
+      "text": "Change a package priority",
+      "repeat": 0,
+      "mode": "codex",
+      "passed": true,
+      "clarification": true,
+      "wallLatencyMs": 4000,
+      "attempts": 1,
+      "retries": 0,
+      "model": "not reported",
+      "proposal": {
+        "commands": [],
+        "clarification": "Should pkg-1 be set to normal or urgent?",
+        "provider": "codex",
+        "model": "Codex default (model not reported)",
+        "latencyMs": 3991
+      },
+      "validation": "clarification",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "invalid-stop",
+      "group": "invalid",
+      "text": "Send a delivery from Depot to Atlantis",
+      "repeat": 0,
+      "mode": "codex",
+      "passed": false,
+      "clarification": false,
+      "wallLatencyMs": 2176,
+      "attempts": 1,
+      "retries": 0,
+      "model": "not reported",
+      "error": "provider_failed",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "invalid-stop",
+      "group": "invalid",
+      "text": "Send a delivery from Depot to Atlantis",
+      "repeat": 0,
+      "mode": "auto",
+      "passed": true,
+      "clarification": true,
+      "wallLatencyMs": 110,
+      "attempts": 1,
+      "retries": 0,
+      "model": "jev-1.13.0",
+      "proposal": {
+        "commands": [],
+        "clarification": "Which two different locations should this delivery travel between?",
+        "provider": "typesafe",
+        "model": "jev-1.13.0",
+        "latencyMs": 109,
+        "routedBy": "typesafe",
+        "routeCategory": "dispatch_delivery",
+        "routerLatencyMs": 109,
+        "routerModel": "jev-1.13.0",
+        "routerUsage": {
+          "input_tokens": 871,
+          "output_tokens": 156
+        },
+        "usage": {
+          "input_tokens": 871,
+          "output_tokens": 156
+        }
+      },
+      "validation": "clarification",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "invalid-operation",
+      "group": "invalid",
+      "text": "Delete every courier and launch a rocket",
+      "repeat": 0,
+      "mode": "auto",
+      "passed": false,
+      "clarification": false,
+      "wallLatencyMs": 2627,
+      "attempts": 1,
+      "retries": 0,
+      "model": "not reported",
+      "error": "provider_failed",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "invalid-operation",
+      "group": "invalid",
+      "text": "Delete every courier and launch a rocket",
+      "repeat": 0,
+      "mode": "codex",
+      "passed": true,
+      "clarification": true,
+      "wallLatencyMs": 3901,
+      "attempts": 1,
+      "retries": 0,
+      "model": "not reported",
+      "proposal": {
+        "commands": [],
+        "clarification": "Deleting couriers and launching rockets are unsupported. What delivery action would you like instead?",
+        "provider": "codex",
+        "model": "Codex default (model not reported)",
+        "latencyMs": 3896
+      },
+      "validation": "clarification",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "heldout-priority",
+      "group": "held-out",
+      "text": "Please bump pkg-1 up to urgent priority",
+      "repeat": 0,
+      "mode": "codex",
+      "passed": false,
+      "clarification": false,
+      "wallLatencyMs": 2065,
+      "attempts": 1,
+      "retries": 0,
+      "model": "not reported",
+      "error": "provider_failed",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "heldout-priority",
+      "group": "held-out",
+      "text": "Please bump pkg-1 up to urgent priority",
+      "repeat": 0,
+      "mode": "auto",
+      "passed": true,
+      "clarification": false,
+      "wallLatencyMs": 112,
+      "attempts": 1,
+      "retries": 0,
+      "model": "jev-1.13.0",
+      "proposal": {
+        "commands": [
+          {
+            "type": "set-priority",
+            "packageId": "pkg-1",
+            "priority": "urgent"
+          }
+        ],
+        "clarification": null,
+        "provider": "typesafe",
+        "model": "jev-1.13.0",
+        "latencyMs": 110,
+        "routedBy": "typesafe",
+        "routeCategory": "set_priority",
+        "routerLatencyMs": 110,
+        "routerModel": "jev-1.13.0",
+        "routerUsage": {
+          "input_tokens": 873,
+          "output_tokens": 154
+        },
+        "usage": {
+          "input_tokens": 873,
+          "output_tokens": 154
+        }
+      },
+      "validation": "accepted",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "heldout-dispatch",
+      "group": "held-out",
+      "text": "Have a courier take a normal parcel from Depot over to Shop",
+      "repeat": 0,
+      "mode": "auto",
+      "passed": true,
+      "clarification": false,
+      "wallLatencyMs": 94,
+      "attempts": 1,
+      "retries": 0,
+      "model": "jev-1.13.0",
+      "proposal": {
+        "commands": [
+          {
+            "type": "dispatch-delivery",
+            "from": "D",
+            "to": "S",
+            "priority": "normal",
+            "courierId": "courier-1"
+          }
+        ],
+        "clarification": null,
+        "provider": "typesafe",
+        "model": "jev-1.13.0",
+        "latencyMs": 91,
+        "routedBy": "typesafe",
+        "routeCategory": "dispatch_delivery",
+        "routerLatencyMs": 91,
+        "routerModel": "jev-1.13.0",
+        "routerUsage": {
+          "input_tokens": 876,
+          "output_tokens": 154
+        },
+        "usage": {
+          "input_tokens": 876,
+          "output_tokens": 154
+        }
+      },
+      "validation": "accepted",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "heldout-dispatch",
+      "group": "held-out",
+      "text": "Have a courier take a normal parcel from Depot over to Shop",
+      "repeat": 0,
+      "mode": "codex",
+      "passed": true,
+      "clarification": false,
+      "wallLatencyMs": 4748,
+      "attempts": 1,
+      "retries": 0,
+      "model": "not reported",
+      "proposal": {
+        "commands": [
+          {
+            "type": "dispatch-delivery",
+            "from": "D",
+            "to": "S",
+            "priority": "normal",
+            "courierId": "courier-1"
+          }
+        ],
+        "clarification": null,
+        "provider": "codex",
+        "model": "Codex default (model not reported)",
+        "latencyMs": 4741
+      },
+      "validation": "accepted",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "heldout-ambiguous",
+      "group": "held-out",
+      "text": "Could you ship something out of Depot?",
+      "repeat": 0,
+      "mode": "codex",
+      "passed": true,
+      "clarification": true,
+      "wallLatencyMs": 3617,
+      "attempts": 1,
+      "retries": 0,
+      "model": "not reported",
+      "proposal": {
+        "commands": [],
+        "clarification": "Where should the delivery from Depot go?",
+        "provider": "codex",
+        "model": "Codex default (model not reported)",
+        "latencyMs": 3611
+      },
+      "validation": "clarification",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    },
+    {
+      "case": "heldout-ambiguous",
+      "group": "held-out",
+      "text": "Could you ship something out of Depot?",
+      "repeat": 0,
+      "mode": "auto",
+      "passed": true,
+      "clarification": true,
+      "wallLatencyMs": 100,
+      "attempts": 1,
+      "retries": 0,
+      "model": "jev-1.13.0",
+      "proposal": {
+        "commands": [],
+        "clarification": "Which two different locations should this delivery travel between?",
+        "provider": "typesafe",
+        "model": "jev-1.13.0",
+        "latencyMs": 99,
+        "routedBy": "typesafe",
+        "routeCategory": "dispatch_delivery",
+        "routerLatencyMs": 99,
+        "routerModel": "jev-1.13.0",
+        "routerUsage": {
+          "input_tokens": 872,
+          "output_tokens": 156
+        },
+        "usage": {
+          "input_tokens": 872,
+          "output_tokens": 156
+        }
+      },
+      "validation": "clarification",
+      "startingState": {
+        "map": {
+          "locations": [
+            {
+              "id": "D",
+              "label": "Depot",
+              "kind": "depot",
+              "x": 10,
+              "y": 50
+            },
+            {
+              "id": "J",
+              "label": "Junction",
+              "kind": "junction",
+              "x": 45,
+              "y": 50
+            },
+            {
+              "id": "H",
+              "label": "Home",
+              "kind": "home",
+              "x": 80,
+              "y": 20
+            },
+            {
+              "id": "S",
+              "label": "Shop",
+              "kind": "shop",
+              "x": 80,
+              "y": 80
+            }
+          ],
+          "roads": [
+            {
+              "id": "D-J",
+              "from": "D",
+              "to": "J",
+              "closed": false
+            },
+            {
+              "id": "J-H",
+              "from": "J",
+              "to": "H",
+              "closed": false
+            },
+            {
+              "id": "J-S",
+              "from": "J",
+              "to": "S",
+              "closed": false
+            }
+          ]
+        },
+        "couriers": [
+          {
+            "id": "courier-1",
+            "name": "Mina",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          },
+          {
+            "id": "courier-2",
+            "name": "Rook",
+            "locationId": "D",
+            "segment": null,
+            "packageIds": [],
+            "capacity": 2
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-1",
+            "from": "D",
+            "to": "H",
+            "priority": "normal",
+            "status": "queued",
+            "pickedUp": false,
+            "courierId": null,
+            "createdOrder": 1
+          }
+        ],
+        "elapsedSeconds": 0,
+        "distanceTraveled": 0,
+        "events": [
+          {
+            "id": "event-1",
+            "type": "package_created",
+            "atSeconds": 0,
+            "packageId": "pkg-1"
+          }
+        ],
+        "nextPackageNumber": 2,
+        "nextEventNumber": 2
+      }
+    }
+  ]
+}

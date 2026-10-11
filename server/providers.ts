@@ -17,7 +17,7 @@ import {
   type Package,
   type PaperMap,
 } from "../lib/schema";
-import { selectAvailableCourierForDelivery } from "../lib/simulation";
+import { applyCommands, selectAvailableCourierForDelivery } from "../lib/simulation";
 import { ApiError } from "./security";
 
 const IMAGE_LIMITS = { "image/png": 1_500_000, "image/jpeg": 1_500_000, "image/webp": 1_500_000 } as const;
@@ -25,7 +25,7 @@ const CODEX_TIMEOUT_MS = 75_000;
 const TYPE_SAFE_TIMEOUT_MS = 12_000;
 const OPENAI_TIMEOUT_MS = 25_000;
 const MAX_PROVIDER_OUTPUT_BYTES = 64_000;
-const COMMAND_MODES = ["auto", "jev", "openai"] as const;
+const COMMAND_MODES = ["auto", "jev", "codex", "openai"] as const;
 
 const commandRequestSchema = z.object({
   text: z.string().trim().min(1).max(2_000),
@@ -99,6 +99,9 @@ export type CommandProposal = {
   routedBy?: "typesafe";
   routeCategory?: "create_package" | "dispatch_delivery" | "set_priority" | "set_road" | "assign_package" | "delegate_to_codex" | "clarify";
   routerLatencyMs?: number;
+  routerModel?: string;
+  routerUsage?: { input_tokens: number; output_tokens: number };
+  usage?: { input_tokens: number; output_tokens: number };
   model: string;
   latencyMs: number;
 };
@@ -139,11 +142,11 @@ const commandProposalJsonSchema = {
   type: "object", additionalProperties: false,
   properties: {
     commands: { type: "array", maxItems: 64, items: { anyOf: [
-      { type: "object", additionalProperties: false, properties: { type: { const: "create-package" }, from: { type: "string" }, to: { type: "string" }, priority: { type: "string", enum: ["normal", "urgent"] } }, required: ["type", "from", "to", "priority"] },
-      { type: "object", additionalProperties: false, properties: { type: { const: "dispatch-delivery" }, from: { type: "string" }, to: { type: "string" }, priority: { type: "string", enum: ["normal", "urgent"] }, courierId: { anyOf: [{ type: "string" }, { type: "null" }] } }, required: ["type", "from", "to", "priority", "courierId"] },
-      { type: "object", additionalProperties: false, properties: { type: { const: "set-priority" }, packageId: { type: "string" }, priority: { type: "string", enum: ["normal", "urgent"] } }, required: ["type", "packageId", "priority"] },
-      { type: "object", additionalProperties: false, properties: { type: { const: "set-road" }, roadId: { type: "string" }, closed: { type: "boolean" } }, required: ["type", "roadId", "closed"] },
-      { type: "object", additionalProperties: false, properties: { type: { const: "assign-package" }, packageId: { type: "string" }, courierId: { type: "string" } }, required: ["type", "packageId", "courierId"] },
+      { type: "object", additionalProperties: false, properties: { type: { type: "string", enum: ["create-package"] }, from: { type: "string" }, to: { type: "string" }, priority: { type: "string", enum: ["normal", "urgent"] } }, required: ["type", "from", "to", "priority"] },
+      { type: "object", additionalProperties: false, properties: { type: { type: "string", enum: ["dispatch-delivery"] }, from: { type: "string" }, to: { type: "string" }, priority: { type: "string", enum: ["normal", "urgent"] }, courierId: { anyOf: [{ type: "string" }, { type: "null" }] } }, required: ["type", "from", "to", "priority", "courierId"] },
+      { type: "object", additionalProperties: false, properties: { type: { type: "string", enum: ["set-priority"] }, packageId: { type: "string" }, priority: { type: "string", enum: ["normal", "urgent"] } }, required: ["type", "packageId", "priority"] },
+      { type: "object", additionalProperties: false, properties: { type: { type: "string", enum: ["set-road"] }, roadId: { type: "string" }, closed: { type: "boolean" } }, required: ["type", "roadId", "closed"] },
+      { type: "object", additionalProperties: false, properties: { type: { type: "string", enum: ["assign-package"] }, packageId: { type: "string" }, courierId: { type: "string" } }, required: ["type", "packageId", "courierId"] },
     ] } },
     clarification: { anyOf: [{ type: "string", maxLength: 400 }, { type: "null" }] },
   }, required: ["commands", "clarification"],
@@ -485,6 +488,15 @@ function explicitEntityPairs(text: string): EntityMentionPair[] {
   return pairs;
 }
 
+function deliveryEntityPairs(text: string): EntityMentionPair[] {
+  const explicit = explicitEntityPairs(text);
+  if (explicit.length > 0) return explicit;
+  // Speech can omit "from", but the delivery noun and "to" still pin roles.
+  // Never infer direction from two names merely appearing somewhere in a request.
+  const pattern = /\b(?:delivery|parcel|package)\s+(?!from\b)(.+?)\s+to\s+(.+?)(?=\s+(?:(?:and|then)\s+)?(?:create|dispatch|send|deliver|set|assign|open|close|reopen|change|update)\b|\s+(?:with|as|priority|urgent|normal|standard|please|now)\b|[,.!?;]|$)/giu;
+  return [...text.matchAll(pattern)].map((match) => ({ left: match[1].trim(), right: match[2].trim() }));
+}
+
 function explicitRoadEntityPairs(text: string): EntityMentionPair[] {
   const patterns = [
     /\broad\s+between\s+(.+?)\s+and\s+(.+?)(?=\s+(?:(?:and|then)\s+)?(?:create|set|assign|open|close|reopen|change|update)\b|\s+(?:please|now)\b|[,.!?;]|$)/giu,
@@ -548,9 +560,6 @@ function validateProposedCommands(commands: Command[], context: z.infer<typeof c
     if (command.type === "dispatch-delivery") {
       if (!locations.has(command.from) || !locations.has(command.to) || command.from === command.to) return "Choose two different locations on this map.";
       if (ambiguousLocations.has(command.from) || ambiguousLocations.has(command.to)) return "Name the delivery locations more clearly; one or both labels match multiple stops.";
-      if (!selectAvailableCourierForDelivery(context.map, context.couriers, command.from, command.to, command.courierId ?? undefined)) {
-        return "No available courier has capacity and a reachable route for this delivery.";
-      }
     }
     if (command.type === "set-road") {
       if (!roads.has(command.roadId)) return "Choose a road on this map.";
@@ -588,18 +597,27 @@ function resolveDispatchCouriers(commands: Command[], context: z.infer<typeof co
     return { commands, error: "Name the courier in one clear delivery clause, or leave couriers unspecified for automatic assignment." };
   }
   const alignedClauses = clauses.length === dispatchIndexes.length ? clauses : [];
-  const planningCouriers = context.couriers.map((courier) => ({ ...courier, packageIds: [...courier.packageIds] }));
+  let planningState = simulationStateSchema.parse({
+    map: context.map, packages: context.packages, couriers: context.couriers,
+    elapsedSeconds: 0, distanceTraveled: 0, events: [], nextPackageNumber: 1, nextEventNumber: 1,
+  });
   const nextCommands = [...commands];
-  for (const [dispatchOrder, index] of dispatchIndexes.entries()) {
+  let dispatchOrder = 0;
+  for (let index = 0; index < nextCommands.length; index += 1) {
     const command = nextCommands[index];
-    if (command?.type !== "dispatch-delivery") continue;
+    if (command?.type !== "dispatch-delivery") {
+      const applied = applyCommands(planningState, [command]);
+      if (!applied.accepted) return { commands, error: applied.error };
+      planningState = applied.state;
+      continue;
+    }
     const clause = alignedClauses[dispatchOrder] ?? "";
     const mentionedCouriers = exactMentions(clause, courierEntries);
     if (ambiguousMentionIds(clause, courierEntries).size > 0 || mentionedCouriers.length > 1) {
       return { commands, error: "Name one courier clearly for each delivery, or leave couriers unspecified for automatic assignment." };
     }
     const requestedCourierId = mentionedCouriers[0];
-    const courierId = selectAvailableCourierForDelivery(context.map, planningCouriers, command.from, command.to, requestedCourierId);
+    const courierId = selectAvailableCourierForDelivery(planningState.map, planningState.couriers, command.from, command.to, requestedCourierId);
     if (!courierId) {
       if (requestedCourierId) {
         const courierName = courierEntries.find((courier) => courier.id === requestedCourierId)?.name ?? requestedCourierId;
@@ -607,9 +625,11 @@ function resolveDispatchCouriers(commands: Command[], context: z.infer<typeof co
       }
       return { commands, error: "No available courier has capacity and a reachable route for this delivery." };
     }
-    const planningCourier = planningCouriers.find((courier) => courier.id === courierId);
-    planningCourier?.packageIds.push("planned-" + (dispatchOrder + 1));
     nextCommands[index] = { ...command, courierId };
+    const applied = applyCommands(planningState, [nextCommands[index]]);
+    if (!applied.accepted) return { commands, error: applied.error };
+    planningState = applied.state;
+    dispatchOrder += 1;
   }
   return { commands: nextCommands };
 }
@@ -618,7 +638,7 @@ function clarification(text: string, provider: CommandProposal["provider"], mode
   return { commands: [], clarification: text, provider, model, latencyMs };
 }
 
-async function callTypeSafeDecision(text: string, context: z.infer<typeof commandRequestSchema>): Promise<{ choices: Record<string, string>; confidence: number; model: string; latencyMs: number }> {
+async function callTypeSafeDecision(text: string, context: z.infer<typeof commandRequestSchema>): Promise<{ choices: Record<string, string>; confidence: number; model: string; latencyMs: number; usage?: CommandProposal["usage"] }> {
   const apiKey = process.env.TYPESAFE_API_KEY;
   if (!apiKey) throw new ApiError(503, "typesafe_unavailable");
   const state = JSON.stringify({ request: text, locations: context.map.locations.map(({ id, label, kind }) => ({ id, label, kind })), roads: context.map.roads.map(({ id, from, to, closed }) => ({ id, from, to, closed })), packages: context.packages.map(({ id, from, to, priority, status }) => ({ id, from, to, priority, status })), couriers: context.couriers.map(({ id, name }) => ({ id, name })) });
@@ -658,7 +678,7 @@ async function callTypeSafeDecision(text: string, context: z.infer<typeof comman
     choices[key] = answer.choice;
     confidence = Math.min(confidence, answer.confidence);
   }
-  return { choices, confidence, model: body.data.model, latencyMs: Math.round(performance.now() - started) };
+  return { choices, confidence, model: body.data.model, latencyMs: Math.round(performance.now() - started), usage: body.data.usage };
 }
 
 async function proposeWithJev(
@@ -693,14 +713,14 @@ async function proposeWithJev(
       break;
     }
     case "dispatch_delivery": {
-      const pairs = explicitEntityPairs(context.text).map(({ left, right }) => ({
+      const pairs = deliveryEntityPairs(context.text).map(({ left, right }) => ({
         from: exactMentions(left, mapEntries),
         to: exactMentions(right, mapEntries),
       }));
       const pair = pairs.length === 1 ? pairs[0] : undefined;
       const from = pair?.from.length === 1 ? pair.from[0] : undefined;
       const to = pair?.to.length === 1 ? pair.to[0] : undefined;
-      if (!from || !to || from === to) return clarification("Which two different locations should this delivery travel between?", "typesafe", result.model, result.latencyMs);
+      if (!from || !to || from === to) return clarification('Which two different stops should this delivery use? Say "Send a delivery from [origin] to [destination]" with the stop names.', "typesafe", result.model, result.latencyMs);
       commands = [{
         type: "dispatch-delivery",
         from,
@@ -848,26 +868,32 @@ async function proposeWithAuto(
 ): Promise<CommandProposal> {
   const routeStarted = performance.now();
   if (!hooks.classify && !process.env.TYPESAFE_API_KEY) {
-    return apiEnabled() ? proposeWithOpenAiApi(context) : proposeWithCodex(context, hooks.runCodex);
+    return proposeWithCodex(context, hooks.runCodex);
   }
   const decision = await (hooks.classify ?? callTypeSafeDecision)(context.text, context);
   const routeMetadata = {
     routedBy: "typesafe" as const,
     routeCategory: decision.choices.operation as NonNullable<CommandProposal["routeCategory"]>,
     routerLatencyMs: decision.latencyMs,
+    routerModel: decision.model,
+    routerUsage: decision.usage,
   };
   if (decision.choices.operation === "delegate_to_codex" && decision.confidence >= 0.68) {
-    const proposal = apiEnabled() ? await proposeWithOpenAiApi(context) : await proposeWithCodex(context, hooks.runCodex);
+    const proposal = await proposeWithCodex(context, hooks.runCodex);
     return { ...proposal, ...routeMetadata, latencyMs: Math.round(performance.now() - routeStarted) };
   }
   const proposal = await proposeWithJev(context, decision);
-  return { ...proposal, ...routeMetadata };
+  return { ...proposal, ...routeMetadata, usage: decision.usage };
 }
 
 export async function proposeCommand(input: unknown, autoTestHooks?: AutoProposalTestHooks): Promise<CommandProposal> {
   const parsed = commandRequestSchema.safeParse(input);
   if (!parsed.success) throw new ApiError(400, "invalid_command_request");
-  if (parsed.data.mode === "jev") return proposeWithJev(parsed.data);
+  if (parsed.data.mode === "jev") {
+    const decision = await callTypeSafeDecision(parsed.data.text, parsed.data);
+    return { ...await proposeWithJev(parsed.data, decision), usage: decision.usage };
+  }
+  if (parsed.data.mode === "codex") return proposeWithCodex(parsed.data, autoTestHooks?.runCodex);
   if (parsed.data.mode === "openai") return apiEnabled() ? proposeWithOpenAiApi(parsed.data) : proposeWithCodex(parsed.data);
   return proposeWithAuto(parsed.data, autoTestHooks);
 }

@@ -130,6 +130,22 @@ function packageStatusLabel(status: Package["status"]) {
 export function PaperworldWorkspace() {
   const [simulation, setSimulation] = useState<SimulationState>(createSampleSimulation);
   const simulationRef = useRef(simulation);
+  const [deliveryFeedback, setDeliveryFeedback] = useState<string | null>(null);
+  const lastEventRef = useRef(0);
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const latestNumber = simulation.nextEventNumber;
+    const fresh = simulation.events.filter((event) => Number(event.id.replace("event-", "")) >= lastEventRef.current);
+    lastEventRef.current = latestNumber;
+    const event = [...fresh].reverse().find((item) => item.type === "package_delivered" || item.type === "package_resumed");
+    if (!event) return;
+    setDeliveryFeedback(`${event.packageId} - ${event.type === "package_delivered" ? "Delivery complete" : "Route restored"}`);
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    feedbackTimerRef.current = setTimeout(() => setDeliveryFeedback(null), 4500);
+  }, [simulation.events, simulation.nextEventNumber]);
+
+  useEffect(() => () => { if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current); }, []);
   const [scenario, setScenario] = useState<"sample" | "scanned">("sample");
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<0.25 | 1 | 4>(0.25);
@@ -276,6 +292,9 @@ export function PaperworldWorkspace() {
   function applyProposedMap(map: PaperMap, startsFreshWorld: boolean) {
     const changes = getRoadChanges(simulationRef.current.map, map);
     if (startsFreshWorld) {
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+      setDeliveryFeedback(null);
+      lastEventRef.current = 0;
       updateSimulation(() => createSimulation(map));
       setRoadChanges(changes);
       setScenario("scanned");
@@ -321,6 +340,9 @@ export function PaperworldWorkspace() {
   }
 
   function resetSimulation() {
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    setDeliveryFeedback(null);
+    lastEventRef.current = 0;
     updateSimulation((current) => scenario === "sample" ? createSampleSimulation() : createSimulation(current.map));
     setRoadChanges(new Map());
     setIsPlaying(false);
@@ -396,11 +418,13 @@ export function PaperworldWorkspace() {
       <main id="main" className="main-content">
         <h1 className="visually-hidden">Paperworld delivery demo</h1>
 
+        <div className="delivery-feedback" role="status" aria-live="polite">{deliveryFeedback}</div>
         <div className="workspace-grid">
           <section className="world-column" aria-labelledby="world-title">
             <div className="column-heading">
               <div>
                 <h2 id="world-title">Route plan</h2>
+                <div className="world-mini-metrics" aria-label="Delivery status"><span>Delivered <strong>{metrics.deliveredCount}</strong></span><span>Waiting <strong>{metrics.queuedCount + metrics.unreachableCount}</strong></span></div>
               </div>
               <div className="simulation-clock" aria-label={`Elapsed simulation time ${formatElapsed(metrics.elapsedSeconds)}`}>
                 <span className={`clock-dot ${isPlaying ? "clock-dot-running" : ""}`} aria-hidden="true" />

@@ -1,0 +1,307 @@
+{
+  "date": "2026-10-11",
+  "implementationCommit": "8eed8ac",
+  "evidence": "native browser DOM interaction; live synthetic-image and text providers; mocked speech/permissions/stale/accelerated timeout",
+  "closurePositions": [
+    "translate(177.348 301.7616)",
+    "translate(177.348 301.7616)"
+  ],
+  "finalDeliveries": {
+    "details": "Run details\nMetrics, couriers, packages, and activity\n⌄\n\nSIMULATION\n\nOperations\nLOCAL SIMULATION\nDelivered\n04\n3.5 per minute\nActive\n00\nassigned or in transit\nWaiting\n00\n0 queued · 0 blocked\nCouriers\n2 ON SHIFT\nM\nMina\nNo assigned packages · 0/2 slots\nAT STOP\nHOME\nR\nRook\nNo assigned packages · 0/2 slots\nAT STOP\nSHOP\nPackages\n4 TOTAL\npkg-4\nDEPOT → HOME\nNormal\nDelivered\npkg-3\nDEPOT → SHOP\nUrgent\nDelivered\npkg-2DEMO\nDEPOT → SHOP\nNormal\nDelivered\npkg-1DEMO\nDEPOT → HOME\nUrgent\nDelivered\nEvent log\nLAST 8 EVENTS\n1:00\npkg-4 delivered by Mina\n0:47\npkg-4 picked up by Mina\n0:40\npkg-3 delivered by Mina\n0:39\npkg-4 · DEPOT → HOME assigned to Mina\n0:39\npkg-4 · DEPOT → HOME created\n0:32\npkg-3 picked up by Mina\n0:19\npkg-3 · DEPOT → SHOP assigned to Mina\n0:19\npkg-3 · DEPOT → SHOP created",
+    "metrics": "Delivered 4Waiting 0"
+  },
+  "receipts": [
+    {
+      "body": {
+        "latencyMs": 7190,
+        "map": {
+          "locations": [
+            {
+              "id": "depot",
+              "kind": "depot",
+              "label": "DEPOT",
+              "x": 11.46,
+              "y": 54.69
+            },
+            {
+              "id": "junction",
+              "kind": "junction",
+              "label": "JUNCTION",
+              "x": 40.63,
+              "y": 54.69
+            },
+            {
+              "id": "home",
+              "kind": "home",
+              "label": "HOME",
+              "x": 82.29,
+              "y": 22.66
+            },
+            {
+              "id": "shop",
+              "kind": "shop",
+              "label": "SHOP",
+              "x": 76.56,
+              "y": 82.03
+            }
+          ],
+          "roads": [
+            {
+              "closed": false,
+              "from": "depot",
+              "id": "depot-junction",
+              "to": "junction"
+            },
+            {
+              "closed": false,
+              "from": "junction",
+              "id": "junction-home",
+              "to": "home"
+            },
+            {
+              "closed": false,
+              "from": "junction",
+              "id": "junction-shop",
+              "to": "shop"
+            }
+          ]
+        },
+        "model": "Codex default (model not reported)",
+        "provider": "codex",
+        "requiresReview": true,
+        "reviewReasons": []
+      },
+      "url": "/api/parse-map"
+    },
+    {
+      "body": {
+        "latencyMs": 7809,
+        "map": {
+          "locations": [
+            {
+              "id": "depot",
+              "kind": "depot",
+              "label": "DEPOT",
+              "x": 11.46,
+              "y": 54.69
+            },
+            {
+              "id": "junction",
+              "kind": "junction",
+              "label": "JUNCTION",
+              "x": 40.63,
+              "y": 54.69
+            },
+            {
+              "id": "home",
+              "kind": "home",
+              "label": "HOME",
+              "x": 82.29,
+              "y": 22.66
+            },
+            {
+              "id": "shop",
+              "kind": "shop",
+              "label": "SHOP",
+              "x": 76.56,
+              "y": 82.03
+            }
+          ],
+          "roads": [
+            {
+              "closed": false,
+              "from": "depot",
+              "id": "depot-junction",
+              "to": "junction"
+            },
+            {
+              "closed": true,
+              "from": "junction",
+              "id": "junction-home",
+              "to": "home"
+            },
+            {
+              "closed": false,
+              "from": "junction",
+              "id": "junction-shop",
+              "to": "shop"
+            }
+          ]
+        },
+        "model": "Codex default (model not reported)",
+        "provider": "codex",
+        "requiresReview": true,
+        "reviewReasons": []
+      },
+      "url": "/api/parse-map"
+    },
+    {
+      "body": {
+        "clarification": null,
+        "commands": [
+          {
+            "packageId": "pkg-1",
+            "priority": "urgent",
+            "type": "set-priority"
+          }
+        ],
+        "latencyMs": 189,
+        "model": "jev-1.13.0",
+        "provider": "typesafe",
+        "routeCategory": "set_priority",
+        "routedBy": "typesafe",
+        "routerLatencyMs": 189,
+        "routerModel": "jev-1.13.0",
+        "routerUsage": {
+          "input_tokens": 906,
+          "output_tokens": 154
+        },
+        "usage": {
+          "input_tokens": 906,
+          "output_tokens": 154
+        }
+      },
+      "url": "/api/command"
+    },
+    {
+      "body": {
+        "latencyMs": 7146,
+        "map": {
+          "locations": [
+            {
+              "id": "depot",
+              "kind": "depot",
+              "label": "DEPOT",
+              "x": 11.46,
+              "y": 54.69
+            },
+            {
+              "id": "junction",
+              "kind": "junction",
+              "label": "JUNCTION",
+              "x": 40.63,
+              "y": 54.69
+            },
+            {
+              "id": "home",
+              "kind": "home",
+              "label": "HOME",
+              "x": 82.29,
+              "y": 22.66
+            },
+            {
+              "id": "shop",
+              "kind": "shop",
+              "label": "SHOP",
+              "x": 76.56,
+              "y": 82.03
+            }
+          ],
+          "roads": [
+            {
+              "closed": false,
+              "from": "depot",
+              "id": "depot-junction",
+              "to": "junction"
+            },
+            {
+              "closed": true,
+              "from": "junction",
+              "id": "junction-home",
+              "to": "home"
+            },
+            {
+              "closed": false,
+              "from": "junction",
+              "id": "junction-shop",
+              "to": "shop"
+            },
+            {
+              "closed": false,
+              "from": "home",
+              "id": "home-shop",
+              "to": "shop"
+            }
+          ]
+        },
+        "model": "Codex default (model not reported)",
+        "provider": "codex",
+        "requiresReview": true,
+        "reviewReasons": []
+      },
+      "url": "/api/parse-map"
+    },
+    {
+      "body": {
+        "clarification": null,
+        "commands": [
+          {
+            "courierId": "courier-1",
+            "from": "depot",
+            "priority": "urgent",
+            "to": "shop",
+            "type": "dispatch-delivery"
+          }
+        ],
+        "latencyMs": 115,
+        "model": "jev-1.13.0",
+        "provider": "typesafe",
+        "routeCategory": "dispatch_delivery",
+        "routedBy": "typesafe",
+        "routerLatencyMs": 115,
+        "routerModel": "jev-1.13.0",
+        "routerUsage": {
+          "input_tokens": 921,
+          "output_tokens": 154
+        },
+        "usage": {
+          "input_tokens": 921,
+          "output_tokens": 154
+        }
+      },
+      "url": "/api/command"
+    },
+    {
+      "body": {
+        "clarification": null,
+        "commands": [
+          {
+            "courierId": "courier-1",
+            "from": "depot",
+            "priority": "normal",
+            "to": "home",
+            "type": "dispatch-delivery"
+          }
+        ],
+        "latencyMs": 110,
+        "model": "jev-1.13.0",
+        "provider": "typesafe",
+        "routeCategory": "dispatch_delivery",
+        "routedBy": "typesafe",
+        "routerLatencyMs": 110,
+        "routerModel": "jev-1.13.0",
+        "routerUsage": {
+          "input_tokens": 946,
+          "output_tokens": 154
+        },
+        "usage": {
+          "input_tokens": 946,
+          "output_tokens": 154
+        }
+      },
+      "url": "/api/command"
+    }
+  ],
+  "recoveryPositions": [
+    "translate(417.54400000000004 301.7616)",
+    "translate(436.48740913361763 309.36197009623766)"
+  ],
+  "timeoutRetry": [
+    "Retry",
+    "Use Codex"
+  ],
+  "viewport": {
+    "scrollWidth": 375,
+    "width": 390
+  }
+}

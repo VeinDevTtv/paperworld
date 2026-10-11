@@ -40,6 +40,8 @@ type SpeechRecognitionLike = {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
+  onstart?: (() => void) | null;
+  onaudioend?: (() => void) | null;
   onresult: ((event: SpeechResultEvent) => void) | null;
   onerror: ((event: { error: string }) => void) | null;
   onend: (() => void) | null;
@@ -133,7 +135,17 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const commandRequestRevision = useRef(0);
+  const commandBusyRef = useRef(false);
+  const appliedProposalRef = useRef<CommandProposal | null>(null);
+  const [voiceState, setVoiceState] = useState("Stopped");
   const commandAbort = useRef<AbortController | null>(null);
+  const commandTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    commandRequestRevision.current += 1;
+    commandAbort.current?.abort();
+    if (commandTimeout.current) clearTimeout(commandTimeout.current);
+  }, []);
   const previousCommandContext = useRef("");
 
   const locations = simulation.map.locations;
@@ -155,6 +167,14 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
   });
   const latestCommandContext = useRef(commandContext);
   latestCommandContext.current = commandContext;
+
+  useEffect(() => {
+    const recognition = recognitionRef.current;
+    recognitionRef.current = null;
+    recognition?.stop();
+    setIsListening(false);
+    setVoiceState("Stopped");
+  }, [worldRevision]);
 
   useEffect(() => {
     if (commandStartedAt === null || !commandBusy) return;
@@ -185,7 +205,10 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
     if (!hasPendingRequest && !proposal) return;
     commandRequestRevision.current += 1;
     commandAbort.current?.abort();
+    if (commandTimeout.current) clearTimeout(commandTimeout.current);
+    commandTimeout.current = null;
     commandAbort.current = null;
+    commandBusyRef.current = false;
     setCommandBusy(false);
     setCommandStartedAt(null);
     setProposal(null);
@@ -266,18 +289,25 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
     commitManual([{ type: "set-priority", packageId: currentPriorityPackageId, priority: nextPriority }], `${currentPriorityPackageId} priority set to ${nextPriority}.`);
   }
 
-  async function handleCommandPreview(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleCommandPreview(event?: React.FormEvent<HTMLFormElement>, mode: "auto" | "codex" = "auto") {
+    event?.preventDefault();
+    if (commandBusyRef.current) return;
     const text = commandText.trim();
     if (!text) {
       setCommandError("Write or dictate a delivery instruction first.");
       return;
     }
 
+    commandBusyRef.current = true;
     const requestRevision = ++commandRequestRevision.current;
     const requestContext = commandContext;
     const controller = new AbortController();
     commandAbort.current = controller;
+    let timedOut = false;
+    commandTimeout.current = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 90_000);
     setCommandBusy(true);
     setCommandStartedAt(Date.now());
     setCommandElapsedSeconds(0);
@@ -294,11 +324,12 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
           map: simulation.map,
           packages: simulation.packages,
           couriers: simulation.couriers,
-          mode: "auto",
+          mode,
         }),
       });
       const payload: unknown = await response.json().catch(() => null);
       if (requestRevision !== commandRequestRevision.current || latestCommandContext.current !== requestContext) return;
+      if (timedOut) throw new Error("Command connection timed out.");
       if (!response.ok) throw new Error(errorMessage(payload, response.status));
       if (!payload || typeof payload !== "object") throw new Error("Command response was incomplete.");
       const record = payload as Record<string, unknown>;
@@ -309,7 +340,11 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
       if (record.provider !== "typesafe" && record.provider !== "codex" && record.provider !== "openai") {
         throw new Error("Command provider was not recognized.");
       }
-      const clarification = record.clarification === null || typeof record.clarification === "string" ? record.clarification : null;
+      if (record.clarification !== null && (typeof record.clarification !== "string" || !record.clarification.trim())) {
+        throw new Error("Command response contained an invalid clarification. Nothing was applied; retry the command.");
+      }
+      const clarification = record.clarification as string | null;
+      if (!clarification && parsedCommands.data.length === 0) throw new Error("Command response contained no actions or clarification. Nothing was applied; retry the command.");
       const routeCategory = typeof record.routeCategory === "string" && record.routeCategory in commandRouteLabels
         ? record.routeCategory as NonNullable<CommandProposal["routeCategory"]>
         : undefined;
@@ -317,6 +352,7 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
       const routerLatencyMs = typeof record.routerLatencyMs === "number" && Number.isFinite(record.routerLatencyMs) && record.routerLatencyMs >= 0
         ? record.routerLatencyMs
         : undefined;
+      if (clarification && parsedCommands.data.length) throw new Error("The provider mixed clarification with actions. Nothing was applied; retry the command.");
       const result: CommandProposal = {
         commands: parsedCommands.data,
         clarification,
@@ -331,12 +367,15 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
       setProposal(result);
       setLastCommandCall({ provider: providerLabel(result.provider), latencyMs: result.latencyMs });
     } catch (error) {
-      if (requestRevision === commandRequestRevision.current && !controller.signal.aborted) {
-        setCommandError(error instanceof Error ? error.message : "Command preview failed.");
+      if (requestRevision === commandRequestRevision.current && (!controller.signal.aborted || timedOut)) {
+        setCommandError(timedOut ? "The command connection timed out after 90 seconds. No changes were applied. Retry or use Codex." : error instanceof Error ? error.message : "Command preview failed.");
       }
     } finally {
       if (requestRevision === commandRequestRevision.current) {
+        if (commandTimeout.current) clearTimeout(commandTimeout.current);
+        commandTimeout.current = null;
         commandAbort.current = null;
+        commandBusyRef.current = false;
         setCommandBusy(false);
         setCommandStartedAt(null);
       }
@@ -344,12 +383,13 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
   }
 
   function applyProposal() {
-    if (!proposal || proposal.commands.length === 0) return;
+    if (!proposal || proposal.commands.length === 0 || appliedProposalRef.current === proposal) return;
     if (proposal.contextKey !== commandContext) {
       setProposal(null);
       setProposalNotice("The run changed after this preview. Review the current run and preview the command again.");
       return;
     }
+    appliedProposalRef.current = proposal;
     const error = onApplyCommands(proposal.commands);
     if (error) {
       setProposalNotice(`Nothing was applied. ${error}`);
@@ -364,25 +404,38 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
     const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
     if (!Recognition) {
       setVoiceSupported(false);
-      setVoiceError("Speech recognition is not available in this browser.");
+      setVoiceError("Speech recognition is not available in this browser. Try this localhost page in Google Chrome, or focus the command field and use Windows Win+H, then review.");
       return;
     }
 
+    if (recognitionRef.current) return;
     setVoiceError(null);
+    setVoiceState("Starting");
     const recognition = new Recognition();
     recognition.continuous = false;
     recognition.interimResults = true;
     recognition.lang = navigator.language || "en-US";
+    recognition.onstart = () => { if (recognitionRef.current === recognition) setVoiceState("Listening"); };
+    recognition.onaudioend = () => { if (recognitionRef.current === recognition) setVoiceState("Processing"); };
     recognition.onresult = (event) => {
+      if (recognitionRef.current !== recognition) return;
       const words = Array.from({ length: event.results.length }, (_, index) => event.results[index]?.[0]?.transcript ?? "").join("").trim();
       if (words) updateCommandText(words);
     };
     recognition.onerror = (event) => {
-      setVoiceError(`Speech recognition stopped (${event.error}).`);
+      if (recognitionRef.current !== recognition) return;
+      setVoiceState("Error");
+      setVoiceError(event.error === "network"
+        ? "Dictation could not reach the browser speech service. Any captured text is kept. Try this localhost page in Google Chrome, or focus the command field and use Windows Win+H, then review."
+        : event.error === "not-allowed"
+          ? "Microphone permission was denied. Allow microphone access in browser settings, then retry, or type the instruction."
+          : `Speech recognition stopped (${event.error}). Any captured text is kept; retry or type the instruction.`);
       setIsListening(false);
       recognitionRef.current = null;
     };
     recognition.onend = () => {
+      if (recognitionRef.current !== recognition) return;
+      setVoiceState((current) => current === "Error" ? current : "Stopped");
       setIsListening(false);
       recognitionRef.current = null;
     };
@@ -392,11 +445,13 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
       setIsListening(true);
     } catch {
       recognitionRef.current = null;
+      setVoiceState("Error");
       setVoiceError("Could not start speech recognition. Try again from this browser.");
     }
   }
 
   function stopVoiceInput() {
+    setVoiceState("Processing");
     recognitionRef.current?.stop();
     setIsListening(false);
   }
@@ -414,7 +469,7 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
           <i aria-hidden="true" />{providerLoading ? "Checking" : selectedCommandReady ? "Auto" : "Check providers"}
         </span>
       </div>
-      <form className="command-bar-form" onSubmit={handleCommandPreview}>
+      <form className="command-bar-form" onSubmit={(event) => void handleCommandPreview(event)}>
         <label className="visually-hidden" htmlFor="command-text">Give a delivery instruction</label>
         <textarea
           id="command-text"
@@ -433,7 +488,7 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
             {commandBusy ? `Waiting · ${commandElapsedSeconds >= 60 ? `${Math.floor(commandElapsedSeconds / 60)}m ${commandElapsedSeconds % 60}s` : `${commandElapsedSeconds}s`}` : "Review command"}<span aria-hidden="true">↗</span>
           </button>
         </div>
-        <p className="command-privacy-note">Speech recognition may process audio. Check the transcript before previewing.</p>
+        <p className="command-privacy-note">Dictation: {voiceState.toLowerCase()}. Speech recognition may process audio. Review the transcript before sending.</p>
         {commandBusy ? <p className="scan-progress" role="status" aria-live="polite">Waiting for a command provider · {commandElapsedSeconds}s elapsed. Nothing is applied yet.</p> : null}
       </form>
       {proposal ? <div className="command-proposal" aria-live="polite">
@@ -465,8 +520,8 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
         {manualError ?? commandError ?? manualNotice ?? proposalNotice ?? ""}
       </div>
       {manualError ? <p className="workspace-status workspace-status-error" role="alert">{manualError}</p> : null}
-      {commandError ? <p className="workspace-status workspace-status-error" role="alert">{commandError}</p> : null}
-      {voiceError ? <p className="workspace-status workspace-status-error" role="alert">{voiceError}</p> : null}
+      {commandError ? <div className="workspace-status workspace-status-error"><p role="alert">{commandError}</p><button className="workbench-secondary-submit" type="button" disabled={commandBusy} onClick={() => void handleCommandPreview()}>Retry</button>{providerStatus?.command.provider === "codex" && providerStatus.command.ready ? <button className="workbench-secondary-submit" type="button" disabled={commandBusy} onClick={() => void handleCommandPreview(undefined, "codex")}>Use Codex</button> : null}</div> : null}
+      {voiceError ? <div className="workspace-status workspace-status-error"><p role="alert">{voiceError}</p>{voiceSupported ? <button className="workbench-secondary-submit" type="button" disabled={commandBusy || isListening} onClick={startVoiceInput}>Retry dictation</button> : null}</div> : null}
       {proposalNotice ? <p className={`workspace-status ${proposalNotice.startsWith("Nothing") ? "workspace-status-error" : "workspace-status-success"}`} role="status">{proposalNotice}</p> : null}
       {manualNotice ? <p className="workspace-status workspace-status-success" role="status">{manualNotice}</p> : null}
 
