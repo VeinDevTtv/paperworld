@@ -12,7 +12,7 @@ Core checkpoint `c0236b3`; final integrated main-commit gates remain pending. Pr
 - 2D/3D switching, actual WebGL context loss, and mocked WebGL creation failure retained exact serialized simulation state and made zero inference calls. Retry restored the real renderer.
 - Mocked reduced-motion preference false→true left camera controls working. Zoom bounded exactly9–38 world units; Reset view restored11/15/16 without changing the run.
 - 52 tests, typecheck, production build and source/built-browser secret scan passed on the working head. Later patches require affected gates again.
-- Desktop1280×800 command input/Review fit within783px after compact chrome. Narrow390px layout had no overflow and was visually inspected through a native recording frame; narrow camera fitting is being checked separately.
+- Desktop1280×800 command input/Review fit within783px after compact chrome. Narrow390px layout had no overflow; the composed camera fit the complete board and was visually inspected through a fixed native recording frame.
 
 ## Performance and failures retained
 
