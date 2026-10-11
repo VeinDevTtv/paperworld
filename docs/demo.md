@@ -4,7 +4,7 @@
 
 For production rehearsal: `npm run build`, then `npm run start` from the project folder. Open http://127.0.0.1:3000. Stop any existing server on that port first. Preserve your existing `.env`. Development remains `npm run dev`; both bind only to loopback. Do not run two servers on the same port.
 
-Start `npm run dev` and open http://127.0.0.1:3000. Keep the existing local `.env`. The labeled sample starts paused. For a repeatable raster rehearsal, use `/demo/initial.png`, `/demo/blocked.png`, and `/demo/reconnected.png`; save those files and upload them in that order. For the real paper demo, use your own drawing and camera or upload.
+Alternatively, use `npm run dev` during development instead of the production server. The labeled sample starts paused. For a repeatable raster rehearsal, use `/demo/initial.png`, `/demo/blocked.png`, and `/demo/reconnected.png`; save those files and upload them in that order. For the real paper demo, use your own drawing and camera or upload.
 
 ## Draw → scan → confirm
 
