@@ -1,6 +1,6 @@
 # Interactive 3D release evidence
 
-In-progress release; final integrated commit and gates remain pending. Prior 2D evidence is not automatically a 3D pass.
+Core checkpoint `c0236b3`; final integrated main-commit gates remain pending. Prior 2D evidence is not automatically a 3D pass. Separate code and saved-pixel reviews approved the core; production acceptance repeated on the frozen build.
 
 ## Performed
 
@@ -28,4 +28,8 @@ Later diagnosis observed zero requestAnimationFrame callbacks while preview reco
 
 User reports all eight physical steps passed in Chrome on the stable 2D release: handwritten webcam capture, reposition/rescan preserving package/positions, road closure/wait, connection/same package completion once, newly drawn home, and dictated delivery to it. Device/version/package ID were not supplied. This is a user report, separate from independently observed synthetic 3D checks. Earlier screenshots corroborate physical dictation/proposal/completion. An actual novice observation remains unperformed; agent walkthroughs are simulated usability review.
 
-Paid API adapter remains disabled/untested. Existing paired benchmark evidence is preserved; renderer-only changes do not alter command/provider behavior. Core final recovery/release checks and a clean complete recording remain pending.
+Production port3000 repeat: live Codex6811/6019/6637ms scans; Jev priority161ms and dispatch252ms. Both courier objects stayed exactly equal through closure and reconnection, urgent `pkg-1` waited then completed once, and mocked dictation/live dispatch `pkg-3` completed. Forty subsequent engine steps made zero inference calls. Switching2D/3D retained exact simulation and building-mesh world positions. `evidence/interactive-3d-production.json`.
+
+Native fixed1280×800 recording covers the complete initial scan→closure→reconnection→same package completion→mocked voice/live dispatch sequence. Local backup `.local/evidence/paperworld-3d-production-live.mp4`, SHA256 `C997DF151794FAB641A3F6AC641F16D501BC405D583B0AC808F4F6433E93D983`, approximately174s, silent. Its visible banner identifies synthetic paper/live providers and mocked dictation. Frames are softly compressed, so this is a fallback/evidence recording, not a polished submission video. Extracted completion frame was inspected; renderer-only sharp PNG and mobile frame separately reviewed.
+
+Paid API adapter remains disabled/untested. Existing paired benchmark evidence is preserved; renderer-only changes do not alter command/provider behavior. Optional comparison is not yet implemented. An actual novice observation remains the human evidence limitation.
