@@ -432,21 +432,25 @@ export function PaperworldWorkspace() {
             className={`simulation-toggle ${isPlaying ? "simulation-toggle-playing" : ""}`}
             type="button"
             onClick={() => {
-              if (demoStartAvailable) setStartError(startDemoRun());
+              if (scenario === "sample") {
+                const panel = document.getElementById("paperwork-panel");
+                panel?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" });
+                panel?.querySelector<HTMLButtonElement>(".capture-actions button")?.focus({ preventScroll: true });
+              } else if (demoStartAvailable) setStartError(startDemoRun());
               else togglePlayback();
             }}
-            aria-label={demoStartAvailable ? "Start deliveries" : isPlaying ? "Pause simulation" : "Resume simulation"}
-            aria-pressed={demoStartAvailable ? undefined : isPlaying}
+            aria-label={scenario === "sample" ? "Scan paper" : demoStartAvailable ? "Start deliveries" : isPlaying ? "Pause simulation" : "Resume simulation"}
+            aria-pressed={scenario === "sample" || demoStartAvailable ? undefined : isPlaying}
           >
-            <span className="simulation-toggle-icon" aria-hidden="true">{isPlaying ? "Ⅱ" : "▶"}</span>
-            <span>{demoStartAvailable ? "Start deliveries" : isPlaying ? "Pause" : "Resume"}</span>
+            <span className="simulation-toggle-icon" aria-hidden="true">{scenario === "sample" ? "↑" : isPlaying ? "Ⅱ" : "▶"}</span>
+            <span>{scenario === "sample" ? "Scan paper" : demoStartAvailable ? "Start deliveries" : isPlaying ? "Pause" : "Resume"}</span>
           </button>
         </div>
       </header>
 
       <main id="main" className="main-content">
         <h1 className="visually-hidden">Paperworld delivery demo</h1>
-        {startError ? <p className="workspace-status workspace-status-error" role="alert">{startError}</p> : null}
+        {demoStartAvailable && startError ? <p className="workspace-status workspace-status-error" role="alert">{startError}</p> : null}
 
         <div className="delivery-feedback" role="status" aria-live="polite">{deliveryFeedback}</div>
         <div className="workspace-grid">
@@ -475,6 +479,7 @@ export function PaperworldWorkspace() {
             <details className="run-controls">
               <summary>Playback controls <span>{playbackSpeed}× speed</span></summary>
               <div className="run-control-content">
+                {scenario === "sample" ? <button className="simulation-step" type="button" onClick={togglePlayback}>{isPlaying ? "Pause example" : "Play example"}</button> : null}
                 <button className="simulation-step" type="button" onClick={() => updateSimulation((current) => tick(current, 1))} aria-label="Advance simulation by one second">
                   <span aria-hidden="true">›</span> Step 1 second
                 </button>

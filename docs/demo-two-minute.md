@@ -4,10 +4,10 @@ Prepare the four-stop D–J, J–H, J–S drawing, webcam permission, initial co
 
 | Time | Operator action / narration |
 | --- | --- |
-| 0:00–0:20 | Show the paper and preview. Capture/upload → Read paper map → review → Confirm map. “Students draw a network; the AI proposes the graph, and we confirm it.” Real roads/buildings appear in3D after confirmation. |
+| 0:00–0:20 | Show paper/preview. Upload & scan or Use camera → Capture & scan → review → Confirm map. “Students draw a network; the AI proposes the graph, and we confirm it.” Roads/buildings appear in3D after confirmation. |
 | 0:20–0:35 | Start deliveries; two labeled packages leave the actual depot. Drag slightly to show depth, then Reset view. Pause after about4 real seconds. Note the home package ID. |
-| 0:35–1:00 | Judge draws a red X over J–H. Capture → read → confirm. Step until the home courier waits at J. Select it: show the same package, destination and waiting reason. “Closing an edge changes reachability, not the identity of this delivery.” |
-| 1:00–1:25 | Judge draws S–H while J–H stays closed. Capture → read → confirm. Show the new connection and replacement route. Set1× speed if desired, then Resume. Same package reaches Home and completes once; Delivered/Waiting counters update. |
+| 0:35–1:00 | Judge draws a red X over J–H. Capture & scan → confirm. Step until the home courier waits at J. Select it: show the same package, destination and waiting reason. “Closing an edge changes reachability, not the identity of this delivery.” |
+| 1:00–1:25 | Judge draws S–H while J–H stays closed. Capture & scan → confirm. Show new connection/replacement route. Set1× speed if desired, then Resume. Same package reaches Home and completes once; counters update. |
 | 1:25–1:50 | Dictate “Send an urgent delivery from Depot to Shop.” Wait for Listening, check transcript, Review command → confirm. Explain code-owned IDs and capacity. Show the truthful provider/task/latency receipt. |
 | 1:50–2:00 | “This is a teaching tool for predicting and observing network disruptions. The simulation owns movement; models interpret paper and instructions.” Show2D/3D switch preserving the run if time permits. |
 

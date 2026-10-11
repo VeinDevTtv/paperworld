@@ -220,11 +220,13 @@ export function DeliveryWorld({ locations, roads, couriers = [], roadChanges = n
         </div>
       </div>
 
+      <details className="world-options"><summary>View & inspect</summary>
       <div className="world-view-controls">
         <div className="world-view-switch" aria-label="World view"><button type="button" aria-pressed={view === "3d"} onClick={() => { setView("3d"); setViewNotice(null); }}>3D world</button><button type="button" aria-pressed={view === "2d"} onClick={() => setView("2d")}>2D map</button></div>
         {view === "3d" ? <button className="world-reset-view" type="button" onClick={() => setResetView((value) => value + 1)}>Reset view</button> : null}
         <label className="world-inspect-select"><span className="visually-hidden">Inspect a stop, road, or courier</span><select aria-label="Inspect world object" value={selection ? `${selection.kind}:${selection.id}` : ""} onChange={(event) => { const [kind, ...parts] = event.target.value.split(":"); setSelection(kind ? { kind: kind as WorldSelection["kind"], id: parts.join(":") } : null); }}><option value="">Inspect…</option><optgroup label="Couriers">{couriers.map((courier) => <option key={courier.id} value={`courier:${courier.id}`}>{courier.label}</option>)}</optgroup><optgroup label="Stops">{locations.map((location) => <option key={location.id} value={`location:${location.id}`}>{location.label}</option>)}</optgroup><optgroup label="Roads">{roads.map((road) => <option key={road.id} value={`road:${road.id}`}>{locationById.get(road.from)?.label} – {locationById.get(road.to)?.label} · {road.id}</option>)}</optgroup></select></label>
       </div>
+      </details>
       {viewNotice ? <p className="world-view-notice" role="status">{viewNotice}</p> : null}
       {view === "3d" ? <div className="world-3d-stage" aria-label="Interactive 3D paper town"><DeliveryWorld3D locations={locations} roads={roads} couriers={couriers} roadChanges={roadChanges} selection={selection} onSelect={setSelection} onUnavailable={showFallback} resetView={resetView} births={birthTimes.current} buildingOffsetCache={buildingOffsetCache.current} celebrations={suppressDeliveryEffects ? new Map() : celebrationTimes.current} roadAnimations={roadAnimationTimes.current} roadBirths={roadBirthTimes.current} /><span className="world-gesture-hint">Drag to orbit · scroll or pinch to zoom</span></div> : <div className="map-canvas">
         <svg
