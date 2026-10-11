@@ -7,7 +7,10 @@ test("small photos are preserved without decoding or recompression", async () =>
   assert.equal(await preparePhoto(file), file);
 });
 
-test("large photo uses EXIF-aware decode, bounded geometry and a scan-sized JPEG", async () => {
+for (const dimensions of [
+  { width: 6000, height: 4000, expectedWidth: 3200, expectedHeight: 2133 },
+  { width: 1000, height: 1000, expectedWidth: 1000, expectedHeight: 1000 },
+]) test(`oversized ${dimensions.width}x${dimensions.height} photo encodes with orientation and readable geometry`, async () => {
   const originalBitmap = globalThis.createImageBitmap;
   const originalDocument = globalThis.document;
   let closed = false;
@@ -19,14 +22,14 @@ test("large photo uses EXIF-aware decode, bounded geometry and a scan-sized JPEG
   };
   globalThis.createImageBitmap = (async (_image, options) => {
     orientation = typeof options === "object" ? options.imageOrientation : undefined;
-    return { width: 6000, height: 4000, close: () => { closed = true; } } as ImageBitmap;
+    return { width: dimensions.width, height: dimensions.height, close: () => { closed = true; } } as ImageBitmap;
   }) as typeof createImageBitmap;
   globalThis.document = { createElement: () => canvas } as unknown as Document;
   try {
     const result = await preparePhoto(new File([new Uint8Array(200)], "map.png", { type: "image/png" }), 150);
     assert.equal(orientation, "from-image");
-    assert.equal(canvas.width, 3200);
-    assert.equal(canvas.height, 2133);
+    assert.equal(canvas.width, dimensions.expectedWidth);
+    assert.equal(canvas.height, dimensions.expectedHeight);
     assert.equal(result.type, "image/jpeg");
     assert.equal(result.name, "map.jpg");
     assert.ok(result.size <= 150);

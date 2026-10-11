@@ -53,3 +53,9 @@ Audit identified a browser connection hang beyond the existing provider timeout.
 Fresh native preview tab captured a soft1280x800 desktop screenshot and was visually inspected. Mobile capture still fails after resize; no mobile screenshot approval. New recording start timed out and stop failed; no approved backup resulted.
 
 After accelerated timeout, restored native fetch and real timers; Read paper map retried live Codex successfully in7503 ms (four stops/three roads, confirmation available, error cleared).48 tests/typecheck/build and source/built-browser64-file secret scan passed for the scan follow-up.
+
+## Native-size oversized image and recovered backup
+
+Browser-generated1000x1000 noisy PNG2,935,327 bytes compressed locally to842 KB JPEG with1000x1000 intrinsic dimensions unchanged. Earlier implementation skipped encoding for images below1200 pixels; helper now attempts native-size compression. Larger images retain the1200-pixel downsampling floor. Three photo regressions/typecheck independently reviewed. This is synthetic browser decode/encode evidence, not handwriting proof.
+
+A later fixed-viewport native capture succeeded:66-second synthetic-photo/live Codex+Jev recovery, visible evidence label, initial7903 ms, closure6906 ms, priority161 ms, recovery7041 ms. Same urgent pkg-1 completed once0:14; pkg-2 at0:07; both rescan positions exact. Native variable timestamps normalized to30fps MP4; full decode of normalized file emitted no errors. Frames20/40/60 seconds inspected: priority screen readable, some world frames soft, no previous severe corruption. Backup is local `.local/evidence/paperworld-backup-synthetic-live.mp4` (no audio), useful as a fallback core-loop clip rather than a polished two-minute submission. It contains no physical camera or microphone demonstration. Original corrupted recording remains excluded.
