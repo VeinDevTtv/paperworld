@@ -7,7 +7,8 @@ export async function preparePhoto(file: File, limit = 1_500_000): Promise<File>
     const context = canvas.getContext("2d");
     if (!context) throw new Error("Photo preparation is unavailable in this browser.");
     let edge = Math.min(3200, Math.max(bitmap.width, bitmap.height));
-    while (edge >= 1200) {
+    const minimumEdge = Math.min(1200, edge);
+    while (edge >= minimumEdge) {
       const scale = Math.min(1, edge / Math.max(bitmap.width, bitmap.height));
       canvas.width = Math.round(bitmap.width * scale);
       canvas.height = Math.round(bitmap.height * scale);
