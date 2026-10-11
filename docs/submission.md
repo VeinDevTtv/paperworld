@@ -41,4 +41,4 @@ Ask an educator or unfamiliar person: “Scan this drawing, start deliveries, ma
 
 ## Operator reserve
 
-Stop implementation 90 minutes before the actual submission deadline. Rehearse twice, confirm localhost provider readiness, test the physical paper/camera/mic, check backup playback and submission attachments. Deadline has been requested but not supplied. Preserve .env; do not publish it, credentials, or private paper photos.
+Stop implementation 90 minutes before the actual submission deadline. Rehearse twice, confirm localhost provider readiness, test the physical paper/camera/mic, check backup playback and submission attachments. User supplied8pm Pacific on2026-10-11; reserve6:30-8pm local for rehearsal/submission. User said PST; using local Pacific clock conservatively unless organizer specifies fixed UTC-8. Preserve .env; do not publish it, credentials, or private paper photos.

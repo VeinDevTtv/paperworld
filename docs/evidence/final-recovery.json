@@ -1,0 +1,242 @@
+{
+  "afterClosure": [
+    {
+      "label": "Courier Mina, carrying pkg-1 to HOMEMina",
+      "transform": "translate(177.348 301.7616)"
+    },
+    {
+      "label": "Courier Rook, carrying pkg-2 to SHOPRook",
+      "transform": "translate(177.348 301.7616)"
+    }
+  ],
+  "afterRecovery": [
+    {
+      "label": "Courier Mina, carrying pkg-1 to HOMEMina",
+      "transform": "translate(417.54400000000004 301.7616)"
+    },
+    {
+      "label": "Courier Rook, carrying pkg-2 to SHOPRook",
+      "transform": "translate(506.51849650373845 337.45945658879845)"
+    }
+  ],
+  "beforeClosure": [
+    {
+      "label": "Courier Mina, carrying pkg-1 to HOMEMina",
+      "transform": "translate(177.348 301.7616)"
+    },
+    {
+      "label": "Courier Rook, carrying pkg-2 to SHOPRook",
+      "transform": "translate(177.348 301.7616)"
+    }
+  ],
+  "beforeRecovery": [
+    {
+      "label": "Courier Mina, carrying pkg-1 to HOMEMina",
+      "transform": "translate(417.54400000000004 301.7616)"
+    },
+    {
+      "label": "Courier Rook, carrying pkg-2 to SHOPRook",
+      "transform": "translate(506.51849650373845 337.45945658879845)"
+    }
+  ],
+  "commit": "2059048",
+  "evidence": "synthetic uploaded PNG; live Codex; native DOM checks",
+  "final": "paperworld\nSCANNED MAP\n·\nPAUSED\n▶\nResume\nPaperworld delivery demo\nRoute plan\nDelivered 2\nWaiting 0\n0:20\nROUTE NETWORK\n4 STOPS\n4 ROADS\nNORTH DISTRICT\nRIVER WARD\nSOUTH DISTRICT\nNEW\nDEPOT\nDEPOT\nJUNCTION\nJUNCTION\nHOME\nHOME\nSHOP\nSHOP\nMina\nRook\nN\n1 grid unit\nDepot\nHome\nShop\nJunction\nCourier\nDelivery route\nAlternate route\nClosed road\nINSPECT\nSelect a stop, road, or courier\nPlayback controls 0.25× speed\n1 change applied atomically.\n\n1 change applied atomically.\n\nWhat should happen?\n\nDescribe a delivery or a short sequence of route changes. Review each proposal before applying.\n\nAuto\nGive a delivery instruction\n◉\nDictate\nReview command\n↗\n\nDictation: stopped. Speech recognition may process audio. Review the transcript before sending.\n\nMore controls\nManual dispatch · provider status\nPaper map\nScan a sketch\nREADY TO SCAN\nDrawing key\n↳\nreconnected.png\n41 KB\n↑\nUpload photo\nUse sample sketch\nUse camera\nRead paper map\n↗\n\nThe image is sent only when you choose Read paper map.\n\nAdjust mapOpen the current route editor⌄\n\nMap changes confirmed. Positions and progress were preserved; playback is paused.\n\nRun details\nMetrics, couriers, packages, and activity\n⌄\n\nSIMULATION\n\nOperations\nLOCAL SIMULATION\nDelivered\n02\n5.9 per minute\nActive\n00\nassigned or in transit\nWaiting\n00\n0 queued · 0 blocked\nCouriers\n2 ON SHIFT\nM\nMina\nNo assigned packages · 0/2 slots\nAT STOP\nHOME\nR\nRook\nNo assigned packages · 0/2 slots\nAT STOP\nSHOP\nPackages\n2 TOTAL\npkg-2DEMO\nDEPOT → SHOP\nNormal\nDelivered\nRook\npkg-1DEMO\nDEPOT → HOME\nNormal\nDelivered\nMina\nEvent log\nLAST 8 EVENTS\n0:14\npkg-1 delivered by Mina\n0:07\npkg-2 delivered by Rook\n0:04\npkg-1 route restored\n0:04\nMap update applied\n0:00\npkg-1 route unreachable\n0:00\nMap update applied\n0:00\npkg-2 picked up by Rook\n0:00\npkg-1 picked up by Mina\nPAPERWORLD / DISPATCH WORKSPACE\nLOCAL SIMULATION · PROVIDER RESULT SHOWN PER SCAN",
+  "receipts": [
+    {
+      "body": {
+        "latencyMs": 7364,
+        "map": {
+          "locations": [
+            {
+              "id": "depot",
+              "kind": "depot",
+              "label": "DEPOT",
+              "x": 11.46,
+              "y": 54.69
+            },
+            {
+              "id": "junction",
+              "kind": "junction",
+              "label": "JUNCTION",
+              "x": 40.63,
+              "y": 54.69
+            },
+            {
+              "id": "home",
+              "kind": "home",
+              "label": "HOME",
+              "x": 82.29,
+              "y": 22.66
+            },
+            {
+              "id": "shop",
+              "kind": "shop",
+              "label": "SHOP",
+              "x": 76.56,
+              "y": 82.03
+            }
+          ],
+          "roads": [
+            {
+              "closed": false,
+              "from": "depot",
+              "id": "depot-junction",
+              "to": "junction"
+            },
+            {
+              "closed": false,
+              "from": "junction",
+              "id": "junction-home",
+              "to": "home"
+            },
+            {
+              "closed": false,
+              "from": "junction",
+              "id": "junction-shop",
+              "to": "shop"
+            }
+          ]
+        },
+        "model": "Codex default (model not reported)",
+        "provider": "codex",
+        "requiresReview": true,
+        "reviewReasons": []
+      },
+      "status": 200,
+      "url": "/api/parse-map"
+    },
+    {
+      "body": {
+        "latencyMs": 6590,
+        "map": {
+          "locations": [
+            {
+              "id": "depot",
+              "kind": "depot",
+              "label": "DEPOT",
+              "x": 11.46,
+              "y": 54.69
+            },
+            {
+              "id": "junction",
+              "kind": "junction",
+              "label": "JUNCTION",
+              "x": 40.63,
+              "y": 54.69
+            },
+            {
+              "id": "home",
+              "kind": "home",
+              "label": "HOME",
+              "x": 82.29,
+              "y": 22.66
+            },
+            {
+              "id": "shop",
+              "kind": "shop",
+              "label": "SHOP",
+              "x": 76.56,
+              "y": 82.03
+            }
+          ],
+          "roads": [
+            {
+              "closed": false,
+              "from": "depot",
+              "id": "depot-junction",
+              "to": "junction"
+            },
+            {
+              "closed": true,
+              "from": "junction",
+              "id": "junction-home",
+              "to": "home"
+            },
+            {
+              "closed": false,
+              "from": "junction",
+              "id": "junction-shop",
+              "to": "shop"
+            }
+          ]
+        },
+        "model": "Codex default (model not reported)",
+        "provider": "codex",
+        "requiresReview": true,
+        "reviewReasons": []
+      },
+      "status": 200,
+      "url": "/api/parse-map"
+    },
+    {
+      "body": {
+        "latencyMs": 6761,
+        "map": {
+          "locations": [
+            {
+              "id": "depot",
+              "kind": "depot",
+              "label": "DEPOT",
+              "x": 11.46,
+              "y": 54.69
+            },
+            {
+              "id": "junction",
+              "kind": "junction",
+              "label": "JUNCTION",
+              "x": 40.63,
+              "y": 54.69
+            },
+            {
+              "id": "home",
+              "kind": "home",
+              "label": "HOME",
+              "x": 82.29,
+              "y": 22.66
+            },
+            {
+              "id": "shop",
+              "kind": "shop",
+              "label": "SHOP",
+              "x": 76.56,
+              "y": 82.03
+            }
+          ],
+          "roads": [
+            {
+              "closed": false,
+              "from": "depot",
+              "id": "depot-junction",
+              "to": "junction"
+            },
+            {
+              "closed": true,
+              "from": "junction",
+              "id": "junction-home",
+              "to": "home"
+            },
+            {
+              "closed": false,
+              "from": "junction",
+              "id": "junction-shop",
+              "to": "shop"
+            },
+            {
+              "closed": false,
+              "from": "home",
+              "id": "home-shop",
+              "to": "shop"
+            }
+          ]
+        },
+        "model": "Codex default (model not reported)",
+        "provider": "codex",
+        "requiresReview": true,
+        "reviewReasons": []
+      },
+      "status": 200,
+      "url": "/api/parse-map"
+    }
+  ]
+}
