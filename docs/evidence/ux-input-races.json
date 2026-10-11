@@ -1,0 +1,36 @@
+{
+  "cameraCapture": {
+    "callsDelta": 1,
+    "requests": 1,
+    "review": "Review scanned map\n\nDEPOT · JUNCTION · HOME · SHOP\n\n3 open connections · 1 closed\n\nDEPOT → JUNCTION\nJUNCTION → HOME · CLOSED\nJUNCTION → SHOP\nHOME → SHOP\nConfirm changes\n↗\nCheck labels and connections. Open Adjust map below to correct them.",
+    "streamEnded": "ended",
+    "unchangedBeforeConfirm": true
+  },
+  "evidence": "Mocked browser device/delayed APIs; actualUXguards in development",
+  "lateCapture": {
+    "captureVisible": false,
+    "inferenceDelta": 0,
+    "stream": "ended",
+    "unchanged": true
+  },
+  "lateScanReset": {
+    "packages": 0,
+    "review": false,
+    "unchanged": true
+  },
+  "prepareReset": {
+    "inferenceDelta": 0,
+    "packages": 0,
+    "review": false,
+    "unchanged": true
+  },
+  "rapidUpload": {
+    "callsDelta": 1,
+    "review": true
+  },
+  "sampleReset": {
+    "inferenceDelta": 0,
+    "review": false,
+    "unchanged": true
+  }
+}

@@ -3693,3 +3693,17 @@ p {
 .comparison-content table { width: 100%; border-collapse: collapse; text-align: left; }
 .comparison-content th, .comparison-content td { padding: 5px; border-bottom: 1px solid #e2e5dc; }
 .comparison-content caption { text-align: left; margin-bottom: 5px; }
+
+.compact-map-review { display: grid; gap: 8px; padding: 12px 0; }
+.compact-map-review p { margin: 0; font-size: 12px; line-height: 1.5; }
+.compact-map-review small { color: var(--text-secondary); font-size: 11px; }
+
+.world-options > summary { padding: 7px 12px; font-size: 11px; color: var(--text-secondary); cursor: pointer; }
+.sample-sketch-option { width: 100%; font-size: 11px; color: var(--text-secondary); }
+.sample-sketch-option summary { cursor: pointer; padding: 4px 0; }
+.compact-connections { margin: 0; padding-left: 16px; font-size: 11px; line-height: 1.6; max-height: 160px; overflow-y: auto; }
+
+#paperwork-panel { scroll-margin-top: 88px; }
+
+.capture-actions .button { white-space: nowrap; }
+.parse-receipt:has(+ .compact-map-review) { padding-block: 8px; }

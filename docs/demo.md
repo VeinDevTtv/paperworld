@@ -8,21 +8,23 @@ Alternatively, use `npm run dev` during development instead of the production se
 
 ## Draw → scan → confirm
 
-The default view is a real interactive 3D paper diorama. Drag to orbit, scroll/pinch to zoom, and use **Reset view** to recover the composed camera. **2D map** is the working fallback; changing views preserves the run and makes no provider request. Buildings/roads appear only after map confirmation; this presentation animation is separate from completed image inference. Clicking a courier (or choosing it in **Inspect…**) shows its package, destination, and waiting reason.
+The default view is a real interactive 3D paper diorama. Drag to orbit and scroll/pinch to zoom. **View & inspect** contains Reset view, the2D fallback and keyboard-accessible Inspect selector. Changing views preserves the run and makes no provider request. Buildings/roads appear only after map confirmation; this presentation animation is separate from completed image inference. Clicking a courier shows its package, destination, and waiting reason.
+
+On the fresh example screen, **Scan paper** jumps directly to the paper controls. Example playback remains optional under Playback controls. After confirming your map, the header becomes Start deliveries, then Pause/Resume.
 
 Camera access shows a waiting state and **Cancel camera**. If the permission request remains unanswered for20 seconds, the app offers a visible retry/upload recovery. Check the address-bar camera permission, or use a photo. A late stream after cancel/timeout is stopped rather than opening unexpectedly. On narrow screens zoom or use **Inspect…** for small labels; Reset view restores the full composition.
 
-Draw four clearly labeled stops with stable IDs: DEPOT D, JUNCTION J, HOME H, and SHOP S. Connect D–J, J–H, and J–S. Do not connect S–H yet. Choose **Upload photo** or **Use camera** → **Capture frame**, then **Read paper map**. Review the proposal and choose **Confirm map**. Correct any transcription before confirming.
+Draw four clearly labeled stops with stable IDs: DEPOT D, JUNCTION J, HOME H, and SHOP S. Connect D–J, J–H, and J–S. Do not connect S–H yet. Choose **Upload & scan** or **Use camera → Capture & scan**. These actions send the selected image after local preparation. Review labels and open/closed connections, then **Confirm map**. Open **Adjust map** only if a correction is needed.
 
 Choose **Start deliveries**. This creates clearly labeled demo packages from the scanned map and dispatches two couriers; no manual package setup is needed. Playback begins at 0.25× demo speed. Choose **Pause** after about four real seconds, before the home delivery completes. Open **Playback controls** and use **Step 1 second** when you need a precise moment.
 
 ## Change the paper → rescan → recover
 
-Mark the J–H road with a red X. Keep all stop IDs unchanged. Upload or capture the revised drawing, choose **Read paper map**, and choose **Confirm changes** after reviewing the closure. The same couriers and packages keep their positions and progress. Playback stays paused. Step until the courier reaches the junction: a courier already on a road finishes that segment; the unreachable home delivery then waits. Click that courier to see its package, destination, and waiting reason.
+Mark the J–H road with a red X. Keep all stop IDs and names unchanged. **Upload & scan** or **Use camera → Capture & scan**, then **Confirm changes** after reviewing the closure. The same couriers and packages keep their positions and progress. Playback stays paused. Step until the courier reaches the junction: a courier already on a road finishes that segment; the unreachable home delivery then waits. Click that courier to see its package, destination, and waiting reason.
 
 Before recovery, enter **Set package pkg-1 to urgent** using the actual package ID displayed in your run. Choose **Review command**, check the proposal, then **Confirm and apply**. The app chooses the supported provider category automatically and shows actual request latency.
 
-Draw a new S–H road while leaving J–H closed. Upload, choose **Read paper map**, and **Confirm changes**. Watch the changed road and replacement route. Optionally set **Playback controls** → **Speed** → **1×**, then choose **Resume**. Changing speed alone does not resume playback. The same stranded package must reach home physically and complete once. Open **Run details** for package IDs and completion events.
+Draw a new S–H road while leaving J–H closed. Upload/capture and scan, then **Confirm changes**. Watch the changed road and replacement route. Optionally set **Playback controls → Speed →1×**, then **Resume**. Changing speed alone does not resume playback. The same stranded package must reach home physically and complete once. Open **Run details** for package IDs and completion events.
 
 ## Voice/text instruction
 
