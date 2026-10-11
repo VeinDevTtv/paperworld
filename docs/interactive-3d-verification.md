@@ -32,4 +32,12 @@ Production port3000 repeat: live Codex6811/6019/6637ms scans; Jev priority161ms 
 
 Native fixed1280×800 recording covers the complete initial scan→closure→reconnection→same package completion→mocked voice/live dispatch sequence. Local backup `.local/evidence/paperworld-3d-production-live.mp4`, SHA256 `C997DF151794FAB641A3F6AC641F16D501BC405D583B0AC808F4F6433E93D983`, approximately174s, silent. Its visible banner identifies synthetic paper/live providers and mocked dictation. Frames are softly compressed, so this is a fallback/evidence recording, not a polished submission video. Extracted completion frame was inspected; renderer-only sharp PNG and mobile frame separately reviewed.
 
-Paid API adapter remains disabled/untested. Existing paired benchmark evidence is preserved; renderer-only changes do not alter command/provider behavior. Optional comparison is not yet implemented. An actual novice observation remains the human evidence limitation.
+Paid API adapter remains disabled/untested. Existing paired benchmark evidence is preserved; renderer-only changes do not alter command/provider behavior. An actual novice observation remains the human evidence limitation.
+
+## Isolated road comparison
+
+After a road-only accepted edit, Compare road change retains one cloned pre-edit snapshot. Both branches run the existing engine for exactly20 simulation seconds; only one receives the edit. Displayed totals are endpoint deliveries/blocked packages; distance is traveled map units during that window. This is a simulation comparison, not a real-world prediction. Adding or moving stops clears this road-only comparison.
+
+Four regression tests cover deterministic branch outcomes, deep isolation, occupied-segment continuity and invalid/unchanged edits. Replayed scan responses from the earlier live synthetic run produced an actual interactive comparison: without S–H,1 delivered/1 blocked/24.2 distance; with S–H,2 delivered/0 blocked/129.0 distance. Branch toggles and Return to live preserved the exact live state and made zero inference calls. Editing is disabled in preview; Step exited preview and advanced only the live run by1 second. Raw evidence: `evidence/road-comparison-browser.json`. These outcomes are one fixture, not a general improvement claim.
+
+Desktop and fixed390px native recording frames were inspected (`evidence/comparison-desktop.png`, `evidence/comparison-mobile.png`). Mobile table width325.6px, document width375px in390px viewport; no horizontal overflow. Recording compression softens text. Separate reviewer approved code and desktop pixels; final integrated production gates remain pending.

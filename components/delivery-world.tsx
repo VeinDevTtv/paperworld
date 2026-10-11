@@ -53,10 +53,11 @@ type DeliveryWorldProps = {
   roads: WorldRoad[];
   couriers?: CourierMarker[];
   roadChanges?: ReadonlyMap<string, RoadChangeKind>;
-  onToggleRoad: (roadId: string) => string | null;
+  onToggleRoad?: (roadId: string) => string | null;
   mapRevision?: number;
   worldBirthRevision?: number;
   deliveredEvents?: { id: string; courierId?: string }[];
+  suppressDeliveryEffects?: boolean;
 };
 
 export type WorldSelection =
@@ -129,7 +130,7 @@ function LocationGlyph({ kind }: { kind: LocationKind }) {
   return <circle r="3" className="junction-core" />;
 }
 
-export function DeliveryWorld({ locations, roads, couriers = [], roadChanges = new Map(), onToggleRoad, mapRevision = 0, worldBirthRevision = 0, deliveredEvents = EMPTY_DELIVERED_EVENTS }: DeliveryWorldProps) {
+export function DeliveryWorld({ locations, roads, couriers = [], roadChanges = new Map(), onToggleRoad, mapRevision = 0, worldBirthRevision = 0, deliveredEvents = EMPTY_DELIVERED_EVENTS, suppressDeliveryEffects = false }: DeliveryWorldProps) {
   const [selection, setSelection] = useState<WorldSelection | null>(null);
   const [view, setView] = useState<"3d" | "2d">("3d");
   const [viewNotice, setViewNotice] = useState<string | null>(null);
@@ -225,7 +226,7 @@ export function DeliveryWorld({ locations, roads, couriers = [], roadChanges = n
         <label className="world-inspect-select"><span className="visually-hidden">Inspect a stop, road, or courier</span><select aria-label="Inspect world object" value={selection ? `${selection.kind}:${selection.id}` : ""} onChange={(event) => { const [kind, ...parts] = event.target.value.split(":"); setSelection(kind ? { kind: kind as WorldSelection["kind"], id: parts.join(":") } : null); }}><option value="">Inspect…</option><optgroup label="Couriers">{couriers.map((courier) => <option key={courier.id} value={`courier:${courier.id}`}>{courier.label}</option>)}</optgroup><optgroup label="Stops">{locations.map((location) => <option key={location.id} value={`location:${location.id}`}>{location.label}</option>)}</optgroup><optgroup label="Roads">{roads.map((road) => <option key={road.id} value={`road:${road.id}`}>{locationById.get(road.from)?.label} – {locationById.get(road.to)?.label} · {road.id}</option>)}</optgroup></select></label>
       </div>
       {viewNotice ? <p className="world-view-notice" role="status">{viewNotice}</p> : null}
-      {view === "3d" ? <div className="world-3d-stage" aria-label="Interactive 3D paper town"><DeliveryWorld3D locations={locations} roads={roads} couriers={couriers} roadChanges={roadChanges} selection={selection} onSelect={setSelection} onUnavailable={showFallback} resetView={resetView} births={birthTimes.current} buildingOffsetCache={buildingOffsetCache.current} celebrations={celebrationTimes.current} roadAnimations={roadAnimationTimes.current} roadBirths={roadBirthTimes.current} /><span className="world-gesture-hint">Drag to orbit · scroll or pinch to zoom</span></div> : <div className="map-canvas">
+      {view === "3d" ? <div className="world-3d-stage" aria-label="Interactive 3D paper town"><DeliveryWorld3D locations={locations} roads={roads} couriers={couriers} roadChanges={roadChanges} selection={selection} onSelect={setSelection} onUnavailable={showFallback} resetView={resetView} births={birthTimes.current} buildingOffsetCache={buildingOffsetCache.current} celebrations={suppressDeliveryEffects ? new Map() : celebrationTimes.current} roadAnimations={roadAnimationTimes.current} roadBirths={roadBirthTimes.current} /><span className="world-gesture-hint">Drag to orbit · scroll or pinch to zoom</span></div> : <div className="map-canvas">
         <svg
           className="delivery-map"
           viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
@@ -438,7 +439,8 @@ export function DeliveryWorld({ locations, roads, couriers = [], roadChanges = n
               <button
                 className="road-toggle-button"
                 type="button"
-                onClick={() => setRoadError(onToggleRoad(selectedRoad.id))}
+                disabled={!onToggleRoad}
+                onClick={() => { if (onToggleRoad) setRoadError(onToggleRoad(selectedRoad.id)); }}
               >
                 {selectedRoad.closed ? "Reopen road" : "Close road"}
               </button>
