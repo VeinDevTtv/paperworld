@@ -1,0 +1,6 @@
+{
+  "body": "The run changed before review finished. Preview the command again against the current run.\n\nWhat should happen?\n\nAsk for a delivery or change a route. Review before applying.\n\nAuto\nGive a delivery instruction\n◉\nDictate\nReview command\n↗\n\nDictation: stopped. Speech recognition may process audio. Review the transcript before sending.\n\nMore controls\nManual dispatch · provider status",
+  "confirmVisible": false,
+  "packages": 2,
+  "stateUnchangedAfterLate": true
+}

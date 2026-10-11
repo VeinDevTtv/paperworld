@@ -92,6 +92,14 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
   const scanRevision = useRef(0);
   const scanAbort = useRef<AbortController | null>(null);
   const scanTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cameraRequest = useRef(0);
+  const cameraPending = useRef(false);
+  const cameraTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    cameraRequest.current += 1;
+    if (cameraTimeout.current) clearTimeout(cameraTimeout.current);
+  }, []);
 
   useEffect(() => () => {
     scanRevision.current += 1;
@@ -260,9 +268,19 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
   }
 
   async function openCamera() {
+    if (cameraPending.current) return;
+    cameraPending.current = true;
+    const request = ++cameraRequest.current;
     onPauseSimulation();
     setCameraError(null);
     setCameraBusy(true);
+    cameraTimeout.current = setTimeout(() => {
+      if (request !== cameraRequest.current) return;
+      cameraRequest.current += 1;
+      cameraPending.current = false;
+      setCameraBusy(false);
+      setCameraError("Camera access is still waiting. Check the camera permission beside the address bar, then try Use camera again or upload a photo.");
+    }, 20_000);
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("Camera access is not supported here. Upload an image instead.");
@@ -271,22 +289,40 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
         video: { facingMode: { ideal: "environment" } },
         audio: false,
       });
+      if (request !== cameraRequest.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       setCameraStream(stream);
       setCameraOpen(true);
     } catch (error) {
+      if (request !== cameraRequest.current) return;
       const name = error instanceof DOMException ? error.name : "";
       const message = name === "NotAllowedError"
         ? "Camera permission was denied. You can still upload a photo."
         : name === "NotFoundError"
           ? "No camera was found. You can still upload a photo."
+          : name === "NotReadableError"
+            ? "The camera is unavailable or in use by another app. Close other camera apps, then try again or upload a photo."
           : getErrorMessage(error, "The camera could not be opened. Upload an image instead.");
       setCameraError(message);
     } finally {
-      setCameraBusy(false);
+      if (request === cameraRequest.current) {
+        if (cameraTimeout.current) clearTimeout(cameraTimeout.current);
+        cameraTimeout.current = null;
+        cameraPending.current = false;
+        setCameraBusy(false);
+      }
     }
   }
 
   function closeCamera() {
+    cameraRequest.current += 1;
+    cameraPending.current = false;
+    if (cameraTimeout.current) clearTimeout(cameraTimeout.current);
+    cameraTimeout.current = null;
+    setCameraBusy(false);
+    cameraStream?.getTracks().forEach((track) => track.stop());
     setCameraOpen(false);
     setCameraStream(null);
   }
@@ -629,13 +665,17 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
             <button className="button button-quiet" type="button" onClick={closeCamera}>Close camera</button>
           </>
         ) : (
+          <>
           <button className="button button-quiet" type="button" onClick={openCamera} disabled={cameraBusy || isScanning}>
             {cameraBusy ? "Opening…" : "Use camera"}
           </button>
+          {cameraBusy ? <button className="button button-quiet" type="button" onClick={closeCamera}>Cancel camera</button> : null}
+          </>
         )}
       </div>
 
       {isPreparing ? <p className="scan-status" role="status">Preparing image…</p> : null}
+      {cameraBusy ? <p className="scan-status" role="status">Waiting for camera access. Check the permission prompt or camera setting beside the address bar. You can cancel and upload a photo.</p> : null}
       {isScanning ? <p className="scan-progress" role="status" aria-live="polite">Reading map · {scanElapsedSeconds >= 60 ? `${Math.floor(scanElapsedSeconds / 60)}m ${scanElapsedSeconds % 60}s` : `${scanElapsedSeconds}s`} elapsed. Nothing is applied yet.</p> : null}
       {imageError ? <p className="inline-error" role="alert">{imageError}</p> : null}
       {cameraError ? <p className="inline-error" role="alert">{cameraError}</p> : null}

@@ -1,0 +1,21 @@
+{
+  "canvas": true,
+  "evidence": "mocked scan result, actual production WebGL rendering; 32stops64roads2couriers",
+  "meanFrameMs": 73.59999999999958,
+  "medianFrameMs": 72.70000000000437,
+  "memory": {
+    "geometries": 129,
+    "textures": 101
+  },
+  "nodes": 32,
+  "p95FrameMs": 78.90000000000146,
+  "render": {
+    "calls": 715,
+    "frame": 24,
+    "lines": 38,
+    "points": 0,
+    "triangles": 13924
+  },
+  "roads": 64,
+  "sample": 7
+}

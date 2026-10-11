@@ -1,5 +1,7 @@
 # Reliability release evidence — 2026-10-11
 
+The interactive 3D amendment is tracked separately in [interactive-3d-verification.md](interactive-3d-verification.md). Physical user evidence now includes all eight Chrome camera/reposition/closure/reconnection/new-home/dictation steps; the user reports they passed on the stable 2D release. No actual novice observation has been reported. Earlier test counts and SVG transforms below belong to their recorded commits.
+
 This extends the previous integrated baseline bfdc341. Root integrates; compound agent owns server/providers.ts/tests/providers.test.ts; input agent owns input components/photo helper/test/generator; separate read-only reviewer approves logic, input lifecycle and benchmark. No paid API adapter calls, new infrastructure or public deployment.
 
 ## Live browser run (development build, native Ravylo preview)
