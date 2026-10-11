@@ -310,6 +310,35 @@ test("automatic routing honors different courier names on separate delivery clau
   assert.equal(proposal.clarification, null);
 });
 
+test("automatic compound dispatch clarifies when later deliveries exceed planned fleet capacity", async () => {
+  const proposal = await proposeCommand({
+    text: "Dispatch a delivery from Depot to Home and dispatch another delivery from Depot to Home",
+    map,
+    packages: [],
+    couriers: [{ ...courier, capacity: 1 }],
+  }, {
+    classify: async () => ({
+      choices: { operation: "delegate_to_codex", priority: "unspecified", road_state: "unspecified" },
+      confidence: 0.94,
+      model: "jev-router-test",
+      latencyMs: 1,
+    }),
+    runCodex: async () => ({
+      value: {
+        commands: [
+          { type: "dispatch-delivery", from: "A", to: "B", priority: "normal", courierId: null },
+          { type: "dispatch-delivery", from: "A", to: "B", priority: "urgent", courierId: null },
+        ],
+        clarification: null,
+      },
+      model: "codex-planner-test",
+      latencyMs: 5,
+    }),
+  });
+  assert.deepEqual(proposal.commands, []);
+  assert.match(proposal.clarification ?? "", /No available courier has capacity/i);
+});
+
 test("Jev resolves a road from unique visible endpoint labels in either direction", async () => {
   await withMockedTypeSafe(typeSafeDecision("set_road", "unspecified", "closed"), async () => {
     const proposal = await proposeCommand({ text: "Close the road between Home and Depot", map, packages: [], couriers: [courier], mode: "jev" });

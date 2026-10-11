@@ -605,7 +605,7 @@ function resolveDispatchCouriers(commands: Command[], context: z.infer<typeof co
         const courierName = courierEntries.find((courier) => courier.id === requestedCourierId)?.name ?? requestedCourierId;
         return { commands, error: `${courierName} does not have capacity and a reachable route for this delivery. Choose another courier or leave the courier unspecified for automatic assignment.` };
       }
-      continue;
+      return { commands, error: "No available courier has capacity and a reachable route for this delivery." };
     }
     const planningCourier = planningCouriers.find((courier) => courier.id === courierId);
     planningCourier?.packageIds.push("planned-" + (dispatchOrder + 1));
