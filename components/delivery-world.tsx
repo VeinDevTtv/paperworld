@@ -24,12 +24,29 @@ export type CourierMarker = {
   label: string;
   x: number;
   y: number;
+  activePackage?: {
+    id: string;
+    fromLabel: string;
+    toLabel: string;
+    priority: "normal" | "urgent";
+    status: "queued" | "assigned" | "in_transit" | "unreachable" | "delivered";
+    pickedUp: boolean;
+  } | null;
+  blockedPackage?: { id: string; targetLabel: string; phase: "pickup" | "delivery" } | null;
+  additionalPackageCount?: number;
+  routeRoadIds?: string[];
+  routeReplanned?: boolean;
+  currentSegmentToLabel?: string | null;
+  pinnedSegment?: { fromX: number; fromY: number; toX: number; toY: number } | null;
+  nextActionLabel?: string | null;
+  waitingReason?: string;
 };
 
 type DeliveryWorldProps = {
   locations: WorldLocation[];
   roads: WorldRoad[];
   couriers?: CourierMarker[];
+  onToggleRoad: (roadId: string) => string | null;
 };
 
 type Selection =
@@ -47,24 +64,14 @@ function toPoint(x: number, y: number) {
   };
 }
 
-function pathForRoad(from: WorldLocation, to: WorldLocation, index: number) {
+function pathForRoad(from: WorldLocation, to: WorldLocation) {
   const start = toPoint(from.x, from.y);
   const end = toPoint(to.x, to.y);
-  const middleX = (start.x + end.x) / 2;
-  const middleY = (start.y + end.y) / 2;
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  const length = Math.max(Math.hypot(dx, dy), 1);
-  const curve = ((index % 3) - 1) * 14;
-  const controlX = middleX - (dy / length) * curve;
-  const controlY = middleY + (dx / length) * curve;
+  const middle = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
 
   return {
-    d: `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`,
-    middle: {
-      x: (start.x + 2 * controlX + end.x) / 4,
-      y: (start.y + 2 * controlY + end.y) / 4,
-    },
+    d: `M ${start.x} ${start.y} L ${end.x} ${end.y}`,
+    middle,
   };
 }
 
@@ -106,8 +113,9 @@ function LocationGlyph({ kind }: { kind: LocationKind }) {
   return <circle r="3" className="junction-core" />;
 }
 
-export function DeliveryWorld({ locations, roads, couriers = [] }: DeliveryWorldProps) {
+export function DeliveryWorld({ locations, roads, couriers = [], onToggleRoad }: DeliveryWorldProps) {
   const [selection, setSelection] = useState<Selection | null>(null);
+  const [roadError, setRoadError] = useState<string | null>(null);
   const locationById = new Map(locations.map((location) => [location.id, location]));
   const selectedLocation = selection?.kind === "location"
     ? locationById.get(selection.id)
@@ -118,6 +126,28 @@ export function DeliveryWorld({ locations, roads, couriers = [] }: DeliveryWorld
   const selectedCourier = selection?.kind === "courier"
     ? couriers.find((courier) => courier.id === selection.id)
     : undefined;
+  const coLocatedCouriers = new Map<string, CourierMarker[]>();
+  for (const courier of couriers) {
+    const key = `${courier.x.toFixed(2)}:${courier.y.toFixed(2)}`;
+    coLocatedCouriers.set(key, [...(coLocatedCouriers.get(key) ?? []), courier]);
+  }
+  const courierOffsets = new Map<string, number>();
+  for (const group of coLocatedCouriers.values()) {
+    group.forEach((courier, index) => {
+      courierOffsets.set(courier.id, (index - (group.length - 1) / 2) * 27);
+    });
+  }
+  const coLocatedLocations = new Map<string, WorldLocation[]>();
+  for (const location of locations) {
+    const key = `${location.x}:${location.y}`;
+    coLocatedLocations.set(key, [...(coLocatedLocations.get(key) ?? []), location]);
+  }
+  const locationLabelOffsets = new Map<string, number>();
+  for (const group of coLocatedLocations.values()) {
+    group.forEach((location, index) => {
+      locationLabelOffsets.set(location.id, (index - (group.length - 1) / 2) * 24);
+    });
+  }
 
   return (
     <div className="world-frame">
@@ -162,19 +192,24 @@ export function DeliveryWorld({ locations, roads, couriers = [] }: DeliveryWorld
           </g>
 
           <g aria-label="Roads">
-            {roads.map((road, index) => {
+            {roads.map((road) => {
               const from = locationById.get(road.from);
               const to = locationById.get(road.to);
               if (!from || !to) return null;
 
-              const geometry = pathForRoad(from, to, index);
+              const geometry = pathForRoad(from, to);
               const isSelected = selection?.kind === "road" && selection.id === road.id;
+              const routeCouriers = couriers.filter((courier) => courier.routeRoadIds?.includes(road.id));
+              const selectedRoute = selectedCourier?.routeRoadIds?.includes(road.id) ?? false;
               const roadClass = [
                 "road-hit-area",
                 road.closed ? "road-hit-area-closed" : "",
                 isSelected ? "road-hit-area-selected" : "",
               ].filter(Boolean).join(" ");
-              const action = () => setSelection({ kind: "road", id: road.id });
+              const action = () => {
+                setSelection({ kind: "road", id: road.id });
+                setRoadError(null);
+              };
 
               return (
                 <g
@@ -193,6 +228,13 @@ export function DeliveryWorld({ locations, roads, couriers = [] }: DeliveryWorld
                     d={geometry.d}
                     className={`road-centerline ${road.closed ? "road-centerline-closed" : ""}`}
                   />
+                  {routeCouriers.length ? (
+                    <path
+                      d={geometry.d}
+                      className={`active-route-line ${selectedRoute ? "active-route-line-selected" : ""} ${selectedRoute && selectedCourier?.routeReplanned ? "active-route-line-replanned" : ""}`}
+                      aria-hidden="true"
+                    />
+                  ) : null}
                   {road.closed ? (
                     <g transform={`translate(${geometry.middle.x} ${geometry.middle.y})`} className="closure-marker" aria-hidden="true">
                       <circle r="13" />
@@ -204,15 +246,24 @@ export function DeliveryWorld({ locations, roads, couriers = [] }: DeliveryWorld
             })}
           </g>
 
+          <g aria-label="Pinned in-flight roads" className="pinned-segment-trails">
+            {couriers.map((courier) => {
+              if (!courier.pinnedSegment) return null;
+              const from = toPoint(courier.pinnedSegment.fromX, courier.pinnedSegment.fromY);
+              const to = toPoint(courier.pinnedSegment.toX, courier.pinnedSegment.toY);
+              return <path key={courier.id} d={`M ${from.x} ${from.y} L ${to.x} ${to.y}`} className="pinned-segment-trail" aria-hidden="true" />;
+            })}
+          </g>
+
           <g aria-label="Stops">
             {locations.map((location) => {
               const point = toPoint(location.x, location.y);
               const isSelected = selection?.kind === "location" && selection.id === location.id;
               const action = () => setSelection({ kind: "location", id: location.id });
               const labelBelow = location.y <= 84;
-              const labelY = labelBelow
+              const labelY = (labelBelow
                 ? point.y + (location.kind === "junction" ? 28 : 40)
-                : point.y - 24;
+                : point.y - 24) + (locationLabelOffsets.get(location.id) ?? 0);
               const labelAnchor = location.x < 14 ? "start" : location.x > 86 ? "end" : "middle";
 
               return (
@@ -254,8 +305,12 @@ export function DeliveryWorld({ locations, roads, couriers = [] }: DeliveryWorld
           <g aria-label="Couriers">
             {couriers.map((courier) => {
               const point = toPoint(courier.x, courier.y);
+              const markerOffset = courierOffsets.get(courier.id) ?? 0;
               const isSelected = selection?.kind === "courier" && selection.id === courier.id;
               const action = () => setSelection({ kind: "courier", id: courier.id });
+              const courierAriaLabel = courier.activePackage
+                ? `Courier ${courier.label}, carrying ${courier.activePackage.id} to ${courier.activePackage.toLabel}`
+                : `Courier ${courier.label}, ${courier.waitingReason ?? "waiting"}`;
 
               return (
                 <g
@@ -265,19 +320,20 @@ export function DeliveryWorld({ locations, roads, couriers = [] }: DeliveryWorld
                   role="button"
                   tabIndex={0}
                   aria-pressed={isSelected}
-                  aria-label={`Courier ${courier.label}`}
+                  aria-label={courierAriaLabel}
                   onClick={action}
                   onKeyDown={(event) => activateOnKeyboard(event, action)}
                   filter="url(#courier-shadow)"
                 >
-                  <title>{`Courier ${courier.label}`}</title>
+                  <title>{courierAriaLabel}</title>
+                  {markerOffset !== 0 ? <path d={`M 0 17 L ${markerOffset} 25`} className="courier-tether" aria-hidden="true" /> : null}
                   <circle r="25" className="courier-pulse" />
                   <circle r="16" className="courier-disc" />
                   <path d="M-7 1h14v8H-7zM-5-5h10l3 6H-8z" className="courier-bag" />
                   <circle cx="-4" cy="10" r="2" className="courier-wheel" />
                   <circle cx="4" cy="10" r="2" className="courier-wheel" />
-                  <rect x="-23" y="25" width="46" height="18" rx="9" className="courier-tag" />
-                  <text x="0" y="37" textAnchor="middle" className="courier-tag-label">{courier.label}</text>
+                  <rect x={markerOffset - 35} y="25" width="70" height="18" rx="9" className="courier-tag" />
+                  <text x={markerOffset} y="37" textAnchor="middle" className="courier-tag-label">{courier.label}</text>
                 </g>
               );
             })}
@@ -299,6 +355,8 @@ export function DeliveryWorld({ locations, roads, couriers = [] }: DeliveryWorld
           <span className="legend-item"><span className="legend-icon legend-shop" aria-hidden="true" />Shop</span>
           <span className="legend-item"><span className="legend-icon legend-junction" aria-hidden="true" />Junction</span>
           <span className="legend-item"><span className="legend-icon legend-courier" aria-hidden="true" />Courier</span>
+          <span className="legend-item"><span className="legend-icon legend-route" aria-hidden="true" />Delivery route</span>
+          <span className="legend-item"><span className="legend-icon legend-alternate-route" aria-hidden="true" />Alternate route</span>
           <span className="legend-item"><span className="legend-icon legend-closed" aria-hidden="true" />Closed road</span>
         </div>
 
@@ -306,9 +364,55 @@ export function DeliveryWorld({ locations, roads, couriers = [] }: DeliveryWorld
           {selectedLocation ? (
             <><span className="readout-type">STOP</span><strong>{selectedLocation.label}</strong><span>{selectedLocation.kind}</span></>
           ) : selectedRoad ? (
-            <><span className="readout-type">ROAD</span><strong>{selectedRoad.from} → {selectedRoad.to}</strong><span>{selectedRoad.closed ? "Closed" : "Open"}</span></>
+            <>
+              <span className="readout-type">ROAD</span>
+              <strong>{locationById.get(selectedRoad.from)?.label ?? selectedRoad.from} → {locationById.get(selectedRoad.to)?.label ?? selectedRoad.to}</strong>
+              <span>{selectedRoad.closed ? "Closed" : "Open"}</span>
+              <button
+                className="road-toggle-button"
+                type="button"
+                onClick={() => setRoadError(onToggleRoad(selectedRoad.id))}
+              >
+                {selectedRoad.closed ? "Reopen road" : "Close road"}
+              </button>
+              {roadError ? <span className="road-toggle-error" role="alert">{roadError}</span> : null}
+            </>
           ) : selectedCourier ? (
-            <><span className="readout-type">COURIER</span><strong>{selectedCourier.label}</strong><span>Current position</span></>
+            <>
+              <span className="readout-type">COURIER</span>
+              <strong>{selectedCourier.label}</strong>
+              {selectedCourier.activePackage ? (
+                <span className="courier-inspection">
+                  <span className="courier-inspection-route">
+                    <b>{selectedCourier.activePackage.id}</b>
+                    <span>{selectedCourier.activePackage.fromLabel} → {selectedCourier.activePackage.toLabel}</span>
+                  </span>
+                  <span className="courier-inspection-state">
+                    {selectedCourier.currentSegmentToLabel
+                      ? `Finishing current road to ${selectedCourier.currentSegmentToLabel}`
+                      : selectedCourier.waitingReason ?? "Available for a delivery"}
+                    {selectedCourier.routeReplanned ? " · Alternate route around a closure" : ""}
+                  </span>
+                  {selectedCourier.currentSegmentToLabel && selectedCourier.activePackage.status === "unreachable" ? (
+                    <span className="courier-inspection-state">{selectedCourier.waitingReason}</span>
+                  ) : null}
+                  {selectedCourier.blockedPackage && selectedCourier.blockedPackage.id !== selectedCourier.activePackage.id ? (
+                    <span className="courier-inspection-state">
+                      Blocked: {selectedCourier.blockedPackage.id} has no open route to {selectedCourier.blockedPackage.phase} at {selectedCourier.blockedPackage.targetLabel}.
+                      {selectedCourier.currentSegmentToLabel ? " Current road will finish before the courier waits." : ""}
+                    </span>
+                  ) : null}
+                  {selectedCourier.nextActionLabel ? (
+                    <span className="courier-inspection-state">Next: {selectedCourier.nextActionLabel}</span>
+                  ) : null}
+                  {selectedCourier.additionalPackageCount ? (
+                    <span className="courier-inspection-state">+ {selectedCourier.additionalPackageCount} more assigned</span>
+                  ) : null}
+                </span>
+              ) : (
+                <span className="courier-inspection-state">{selectedCourier.waitingReason ?? "Available for a delivery"}</span>
+              )}
+            </>
           ) : (
             <><span className="readout-type">INSPECT</span><span>Select a stop, road, or courier</span></>
           )}

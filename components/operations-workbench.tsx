@@ -14,8 +14,22 @@ type CommandProposal = {
   commands: Command[];
   clarification: string | null;
   provider: "typesafe" | "codex" | "openai";
+  routedBy?: "typesafe";
+  routeCategory?: "create_package" | "dispatch_delivery" | "set_priority" | "set_road" | "assign_package" | "delegate_to_codex" | "clarify";
+  routerLatencyMs?: number;
   model: string;
   latencyMs: number;
+  contextKey: string;
+};
+
+const commandRouteLabels: Record<NonNullable<CommandProposal["routeCategory"]>, string> = {
+  create_package: "create package",
+  dispatch_delivery: "dispatch delivery",
+  set_priority: "change priority",
+  set_road: "change road",
+  assign_package: "assign package",
+  delegate_to_codex: "compound",
+  clarify: "clarify",
 };
 
 type SpeechResultEvent = {
@@ -37,6 +51,7 @@ type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
 
 type Props = {
   simulation: SimulationState;
+  worldRevision: number;
   onApplyCommands: (commands: readonly Command[]) => string | null;
 };
 
@@ -44,6 +59,12 @@ function providerLabel(provider: CommandProposal["provider"] | ProviderStatus["i
   if (provider === "typesafe") return "Jev · TypeSafe";
   if (provider === "openai") return "OpenAI API";
   return "Codex sign-in";
+}
+
+function commandRouteSummary(proposal: CommandProposal) {
+  if (proposal.routedBy !== "typesafe" || !proposal.routeCategory) return null;
+  const target = proposal.provider === "typesafe" ? "" : ` → ${proposal.provider === "codex" ? "Codex" : "OpenAI"}`;
+  return `Jev${target} · ${commandRouteLabels[proposal.routeCategory]}`;
 }
 
 function commandDescription(command: Command, map: PaperMap) {
@@ -61,16 +82,35 @@ function commandDescription(command: Command, map: PaperMap) {
 
 function errorMessage(payload: unknown, status: number) {
   if (payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string") {
-    return payload.error;
+    const code = payload.error;
+    const messages: Record<string, string> = {
+      invalid_command_request: "The request could not be validated. Review the command and try again.",
+      rate_limited: "Too many requests. Wait a moment, then try again.",
+      provider_busy: "The provider is handling another request. Try again in a moment.",
+      provider_timeout: "The provider took too long to respond. No changes were applied; try again.",
+      codex_native_unavailable: "The signed-in command provider is unavailable on this app host. Check provider status and try again.",
+      codex_unavailable: "The signed-in command provider is unavailable. Check provider status and try again.",
+      typesafe_unavailable: "The fast command provider is unavailable. Check provider status and try again.",
+      openai_api_unavailable: "The OpenAI API provider is unavailable. Check provider status and try again.",
+      provider_invalid_output: "The provider returned a response that could not be reviewed safely. No changes were applied; try again.",
+      provider_invalid_response: "The provider returned a response that could not be reviewed safely. No changes were applied; try again.",
+      typesafe_invalid_response: "The provider returned a response that could not be reviewed safely. No changes were applied; try again.",
+      provider_invalid_map: "The provider returned a map that could not be validated. Review the input and try again.",
+      typesafe_request_failed: "The fast provider request failed. No changes were applied; try again.",
+      openai_api_request_failed: "The OpenAI provider request failed. No changes were applied; try again.",
+      provider_failed: "The provider request failed. No changes were applied; try again.",
+      paid_api_not_enabled: "Paid API mode is turned off. Check provider status or try a different request.",
+    };
+    return messages[code] ?? `The request failed (${status}). Check provider status and try again.`;
   }
   return `Request failed (${status}).`;
 }
 
-export function OperationsWorkbench({ simulation, onApplyCommands }: Props) {
+export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands }: Props) {
   const [fromId, setFromId] = useState(() => simulation.map.locations[0]?.id ?? "");
   const [toId, setToId] = useState(() => simulation.map.locations[1]?.id ?? simulation.map.locations[0]?.id ?? "");
   const [priority, setPriority] = useState<"normal" | "urgent">("normal");
-  const [assignTo, setAssignTo] = useState("");
+  const [assignTo, setAssignTo] = useState(() => simulation.couriers[0]?.id ?? "");
   const [assignPackageId, setAssignPackageId] = useState("");
   const [assignCourierId, setAssignCourierId] = useState("");
   const [priorityPackageId, setPriorityPackageId] = useState("");
@@ -78,7 +118,6 @@ export function OperationsWorkbench({ simulation, onApplyCommands }: Props) {
   const [manualError, setManualError] = useState<string | null>(null);
   const [manualNotice, setManualNotice] = useState<string | null>(null);
   const [commandText, setCommandText] = useState("");
-  const [commandMode, setCommandMode] = useState<"jev" | "openai">("jev");
   const [commandBusy, setCommandBusy] = useState(false);
   const [commandError, setCommandError] = useState<string | null>(null);
   const [proposal, setProposal] = useState<CommandProposal | null>(null);
@@ -87,10 +126,15 @@ export function OperationsWorkbench({ simulation, onApplyCommands }: Props) {
   const [providerLoading, setProviderLoading] = useState(true);
   const [providerError, setProviderError] = useState<string | null>(null);
   const [lastCommandCall, setLastCommandCall] = useState<{ provider: string; latencyMs: number } | null>(null);
+  const [commandStartedAt, setCommandStartedAt] = useState<number | null>(null);
+  const [commandElapsedSeconds, setCommandElapsedSeconds] = useState(0);
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const commandRequestRevision = useRef(0);
+  const commandAbort = useRef<AbortController | null>(null);
+  const previousCommandContext = useRef("");
 
   const locations = simulation.map.locations;
   const queuedPackages = useMemo(() => simulation.packages.filter((pkg) => pkg.status === "queued"), [simulation.packages]);
@@ -100,6 +144,25 @@ export function OperationsWorkbench({ simulation, onApplyCommands }: Props) {
   const currentAssignPackageId = queuedPackages.some((pkg) => pkg.id === assignPackageId) ? assignPackageId : queuedPackages[0]?.id ?? "";
   const currentAssignCourierId = simulation.couriers.some((courier) => courier.id === assignCourierId) ? assignCourierId : simulation.couriers[0]?.id ?? "";
   const currentPriorityPackageId = editablePackages.some((pkg) => pkg.id === priorityPackageId) ? priorityPackageId : editablePackages[0]?.id ?? "";
+  const commandContext = JSON.stringify({
+    worldRevision,
+    map: {
+      locations: simulation.map.locations.map(({ id }) => id),
+      roads: simulation.map.roads.map(({ id, from, to, closed }) => [id, from, to, closed]),
+    },
+    packages: simulation.packages.map(({ id, from, to, priority: currentPriority, status, courierId }) => [id, from, to, currentPriority, status, courierId]),
+    couriers: simulation.couriers.map(({ id, packageIds, capacity }) => [id, packageIds, capacity]),
+  });
+  const latestCommandContext = useRef(commandContext);
+  latestCommandContext.current = commandContext;
+
+  useEffect(() => {
+    if (commandStartedAt === null || !commandBusy) return;
+    const updateElapsed = () => setCommandElapsedSeconds(Math.floor((Date.now() - commandStartedAt) / 1_000));
+    updateElapsed();
+    const timer = window.setInterval(updateElapsed, 250);
+    return () => window.clearInterval(timer);
+  }, [commandBusy, commandStartedAt]);
 
   useEffect(() => {
     const speechWindow = window as Window & { SpeechRecognition?: SpeechRecognitionConstructor; webkitSpeechRecognition?: SpeechRecognitionConstructor };
@@ -112,6 +175,23 @@ export function OperationsWorkbench({ simulation, onApplyCommands }: Props) {
     // Readiness is fetched once on entry; the manual refresh button can request a newer snapshot.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (previousCommandContext.current === commandContext) return;
+    const hasPreviousContext = previousCommandContext.current !== "";
+    previousCommandContext.current = commandContext;
+    if (!hasPreviousContext) return;
+    const hasPendingRequest = Boolean(commandAbort.current);
+    if (!hasPendingRequest && !proposal) return;
+    commandRequestRevision.current += 1;
+    commandAbort.current?.abort();
+    commandAbort.current = null;
+    setCommandBusy(false);
+    setCommandStartedAt(null);
+    setProposal(null);
+    setCommandError(null);
+    setProposalNotice("The run changed before review finished. Preview the command again against the current run.");
+  }, [commandContext, proposal]);
 
   async function refreshProviderStatus() {
     setProviderLoading(true);
@@ -142,6 +222,14 @@ export function OperationsWorkbench({ simulation, onApplyCommands }: Props) {
     setManualNotice(notice);
     setProposalNotice(null);
     return true;
+  }
+
+  function updateCommandText(value: string) {
+    setCommandText(value);
+    if (proposal) {
+      setProposal(null);
+      setProposalNotice("The command text changed. Preview it again before applying.");
+    }
   }
 
   function handleCreatePackage(event: React.FormEvent<HTMLFormElement>) {
@@ -182,27 +270,35 @@ export function OperationsWorkbench({ simulation, onApplyCommands }: Props) {
     event.preventDefault();
     const text = commandText.trim();
     if (!text) {
-      setCommandError("Write or dictate one operation first.");
+      setCommandError("Write or dictate a delivery instruction first.");
       return;
     }
 
+    const requestRevision = ++commandRequestRevision.current;
+    const requestContext = commandContext;
+    const controller = new AbortController();
+    commandAbort.current = controller;
     setCommandBusy(true);
+    setCommandStartedAt(Date.now());
+    setCommandElapsedSeconds(0);
     setCommandError(null);
     setProposal(null);
     setProposalNotice(null);
     try {
       const response = await fetch("/api/command", {
         method: "POST",
+        signal: controller.signal,
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           text,
           map: simulation.map,
           packages: simulation.packages,
           couriers: simulation.couriers,
-          mode: commandMode,
+          mode: "auto",
         }),
       });
       const payload: unknown = await response.json().catch(() => null);
+      if (requestRevision !== commandRequestRevision.current || latestCommandContext.current !== requestContext) return;
       if (!response.ok) throw new Error(errorMessage(payload, response.status));
       if (!payload || typeof payload !== "object") throw new Error("Command response was incomplete.");
       const record = payload as Record<string, unknown>;
@@ -214,24 +310,46 @@ export function OperationsWorkbench({ simulation, onApplyCommands }: Props) {
         throw new Error("Command provider was not recognized.");
       }
       const clarification = record.clarification === null || typeof record.clarification === "string" ? record.clarification : null;
+      const routeCategory = typeof record.routeCategory === "string" && record.routeCategory in commandRouteLabels
+        ? record.routeCategory as NonNullable<CommandProposal["routeCategory"]>
+        : undefined;
+      const routedBy = record.routedBy === "typesafe" ? "typesafe" : undefined;
+      const routerLatencyMs = typeof record.routerLatencyMs === "number" && Number.isFinite(record.routerLatencyMs) && record.routerLatencyMs >= 0
+        ? record.routerLatencyMs
+        : undefined;
       const result: CommandProposal = {
         commands: parsedCommands.data,
         clarification,
         provider: record.provider,
+        routedBy,
+        routeCategory,
+        routerLatencyMs,
         model: record.model,
         latencyMs: record.latencyMs,
+        contextKey: requestContext,
       };
       setProposal(result);
       setLastCommandCall({ provider: providerLabel(result.provider), latencyMs: result.latencyMs });
     } catch (error) {
-      setCommandError(error instanceof Error ? error.message : "Command preview failed.");
+      if (requestRevision === commandRequestRevision.current && !controller.signal.aborted) {
+        setCommandError(error instanceof Error ? error.message : "Command preview failed.");
+      }
     } finally {
-      setCommandBusy(false);
+      if (requestRevision === commandRequestRevision.current) {
+        commandAbort.current = null;
+        setCommandBusy(false);
+        setCommandStartedAt(null);
+      }
     }
   }
 
   function applyProposal() {
     if (!proposal || proposal.commands.length === 0) return;
+    if (proposal.contextKey !== commandContext) {
+      setProposal(null);
+      setProposalNotice("The run changed after this preview. Review the current run and preview the command again.");
+      return;
+    }
     const error = onApplyCommands(proposal.commands);
     if (error) {
       setProposalNotice(`Nothing was applied. ${error}`);
@@ -257,7 +375,7 @@ export function OperationsWorkbench({ simulation, onApplyCommands }: Props) {
     recognition.lang = navigator.language || "en-US";
     recognition.onresult = (event) => {
       const words = Array.from({ length: event.results.length }, (_, index) => event.results[index]?.[0]?.transcript ?? "").join("").trim();
-      if (words) setCommandText(words);
+      if (words) updateCommandText(words);
     };
     recognition.onerror = (event) => {
       setVoiceError(`Speech recognition stopped (${event.error}).`);
@@ -283,136 +401,155 @@ export function OperationsWorkbench({ simulation, onApplyCommands }: Props) {
     setIsListening(false);
   }
 
-  return (
-    <section className="workbench-section" aria-labelledby="workbench-title">
-      <div className="operations-heading workbench-heading">
+  const selectedCommandReady = Boolean(providerStatus?.jev.ready || providerStatus?.command.ready);
+  const providerSummary = providerLoading ? "Checking status" : providerError ? "Status unavailable" : providerStatus ? "Status loaded" : "No status";
+  const commandBar = (
+    <section className="command-bar" id="command-bar" aria-labelledby="command-bar-title">
+      <div className="command-bar-heading">
         <div>
-          <p className="section-kicker">CONTROL DESK</p>
-          <h2 id="workbench-title">Dispatch controls</h2>
+          <h2 id="command-bar-title">What should happen?</h2>
+          <p>Describe a delivery or a short sequence of route changes. Review each proposal before applying.</p>
         </div>
-        <span className="local-state-label"><span aria-hidden="true" /> Changes apply to this local run</span>
+        <span className={`command-auto-status ${providerLoading ? "is-loading" : selectedCommandReady ? "is-ready" : "is-unavailable"}`}>
+          <i aria-hidden="true" />{providerLoading ? "Checking" : selectedCommandReady ? "Auto" : "Check providers"}
+        </span>
       </div>
+      <form className="command-bar-form" onSubmit={handleCommandPreview}>
+        <label className="visually-hidden" htmlFor="command-text">Give a delivery instruction</label>
+        <textarea
+          id="command-text"
+          className="command-textarea"
+          value={commandText}
+          disabled={commandBusy}
+          onChange={(event) => updateCommandText(event.target.value)}
+          placeholder="Dispatch a package from North home to East home"
+          rows={2}
+        />
+        <div className="command-bar-actions">
+          <button className="voice-button" type="button" onClick={isListening ? stopVoiceInput : startVoiceInput} disabled={(!voiceSupported && !isListening) || commandBusy}>
+            <span aria-hidden="true">{isListening ? "■" : "◉"}</span>{isListening ? "Stop dictation" : voiceSupported ? "Dictate" : "Voice unavailable"}
+          </button>
+          <button className="workbench-submit command-preview-button" type="submit" disabled={commandBusy || !commandText.trim()}>
+            {commandBusy ? `Waiting · ${commandElapsedSeconds >= 60 ? `${Math.floor(commandElapsedSeconds / 60)}m ${commandElapsedSeconds % 60}s` : `${commandElapsedSeconds}s`}` : "Review command"}<span aria-hidden="true">↗</span>
+          </button>
+        </div>
+        <p className="command-privacy-note">Speech recognition may process audio. Check the transcript before previewing.</p>
+        {commandBusy ? <p className="scan-progress" role="status" aria-live="polite">Waiting for a command provider · {commandElapsedSeconds}s elapsed. Nothing is applied yet.</p> : null}
+      </form>
+      {proposal ? <div className="command-proposal" aria-live="polite">
+        <div className="proposal-call-receipt">
+          <span><i aria-hidden="true" />{providerLabel(proposal.provider)}</span>
+          <span>{proposal.model}</span>
+          <strong>{proposal.latencyMs} ms total</strong>
+        </div>
+        {commandRouteSummary(proposal) ? <p className="proposal-routing">{commandRouteSummary(proposal)}{proposal.routerLatencyMs !== undefined ? ` · ${proposal.routerLatencyMs} ms route` : ""}</p> : null}
+        {proposal.clarification ? <p className="clarification-note">{proposal.clarification}</p> : null}
+        {proposal.commands.length ? <>
+          <div className="proposal-list-heading"><strong>Review changes</strong><span>{proposal.commands.length}</span></div>
+          <ol className="command-proposal-list">
+            {proposal.commands.map((command, index) => <li key={`${command.type}-${index}`}>
+              <span className="command-index">{String(index + 1).padStart(2, "0")}</span>
+              <span>{commandDescription(command, simulation.map)}</span>
+              <button type="button" aria-label={`Remove proposed change ${index + 1}`} onClick={() => setProposal((current) => current ? { ...current, commands: current.commands.filter((_, commandIndex) => commandIndex !== index) } : current)}>Remove</button>
+            </li>)}
+          </ol>
+          <button className="apply-proposal-button" type="button" onClick={applyProposal} disabled={!proposal.commands.length}>Confirm and apply</button>
+        </> : proposal.clarification ? null : <p className="clarification-note">No changes were proposed.</p>}
+      </div> : null}
+    </section>
+  );
 
-      <div className="workbench-grid">
-        <section className="workbench-panel manual-panel" aria-labelledby="manual-title">
-          <div className="workbench-panel-heading">
-            <div><p className="workbench-overline">NO MODEL REQUIRED</p><h3 id="manual-title">Manual dispatch</h3></div>
-            <span className="workbench-panel-mark" aria-hidden="true">＋</span>
-          </div>
-          <p className="workbench-copy">Create, assign, and reprioritize packages directly. Each change is checked against current capacity and map state.</p>
+  return (
+    <section className="workbench-section" aria-label="Dispatch and diagnostics">
+      <div className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
+        {manualError ?? commandError ?? voiceError ?? manualNotice ?? proposalNotice ?? ""}
+      </div>
+      {manualError ? <p className="workspace-status workspace-status-error" role="alert">{manualError}</p> : null}
+      {commandError ? <p className="workspace-status workspace-status-error" role="alert">{commandError}</p> : null}
+      {proposalNotice ? <p className={`workspace-status ${proposalNotice.startsWith("Nothing") ? "workspace-status-error" : "workspace-status-success"}`} role="status">{proposalNotice}</p> : null}
+      {manualNotice ? <p className="workspace-status workspace-status-success" role="status">{manualNotice}</p> : null}
 
-          <form className="manual-form" onSubmit={handleCreatePackage}>
-            <div className="form-title-row"><strong>New package</strong><span>01 / CREATE</span></div>
-            <div className="workbench-field-grid">
-              <label className="workbench-field"><span>From</span><select value={currentFromId} onChange={(event) => setFromId(event.target.value)} required>
-                {locations.map((location) => <option key={location.id} value={location.id}>{location.label}</option>)}
-              </select></label>
-              <label className="workbench-field"><span>To</span><select value={currentToId} onChange={(event) => setToId(event.target.value)} required>
-                {locations.map((location) => <option key={location.id} value={location.id}>{location.label}</option>)}
-              </select></label>
-            </div>
-            <div className="workbench-field-grid workbench-field-grid-secondary">
-              <label className="workbench-field"><span>Priority</span><select value={priority} onChange={(event) => setPriority(event.target.value as "normal" | "urgent")}>
-                <option value="normal">Normal</option><option value="urgent">Urgent</option>
-              </select></label>
-              <label className="workbench-field"><span>Assign now <small>Optional</small></span><select value={assignTo} onChange={(event) => setAssignTo(event.target.value)}>
-                <option value="">Keep queued</option>{simulation.couriers.map((courier) => <option key={courier.id} value={courier.id}>{courier.name}</option>)}
-              </select></label>
-            </div>
-            <button className="workbench-submit" type="submit" disabled={locations.length < 2}>Create package <span aria-hidden="true">↗</span></button>
-          </form>
+      {commandBar}
 
-          <div className="manual-subforms">
-            <form className="manual-form compact-manual-form" onSubmit={handleAssignPackage}>
-              <div className="form-title-row"><strong>Assign queued</strong><span>02 / ASSIGN</span></div>
-              {queuedPackages.length ? <div className="workbench-field-grid">
-                <label className="workbench-field"><span>Package</span><select value={currentAssignPackageId} onChange={(event) => setAssignPackageId(event.target.value)}>
-                  {queuedPackages.map((pkg) => <option key={pkg.id} value={pkg.id}>{pkg.id} · {locations.find((location) => location.id === pkg.from)?.label ?? pkg.from}</option>)}
+      <details className="advanced-details">
+        <summary className="disclosure-summary"><span><strong>More controls</strong><small>Manual dispatch · provider status</small></span></summary>
+        <div className="advanced-body">
+        <details className="dispatch-details" id="dispatch-details">
+          <summary className="disclosure-summary">
+            <span><strong>Manual dispatch</strong><small>Create, assign, or reprioritize packages</small></span>
+            <span className="disclosure-chevron" aria-hidden="true">⌄</span>
+          </summary>
+          <div className="dispatch-body">
+          <section className="workbench-panel manual-panel" aria-labelledby="manual-title">
+            <div className="workbench-panel-heading"><h3 id="manual-title">New delivery</h3><span className="command-readiness command-readiness-ready">Manual</span></div>
+            <form className="manual-form" onSubmit={handleCreatePackage}>
+              <div className="workbench-field-grid">
+                <label className="workbench-field"><span>From</span><select value={currentFromId} onChange={(event) => setFromId(event.target.value)} required>
+                  {locations.map((location) => <option key={location.id} value={location.id}>{location.label}</option>)}
                 </select></label>
-                <label className="workbench-field"><span>Courier</span><select value={currentAssignCourierId} onChange={(event) => setAssignCourierId(event.target.value)}>
-                  {simulation.couriers.map((courier) => <option key={courier.id} value={courier.id}>{courier.name} · {courier.packageIds.length}/{courier.capacity}</option>)}
+                <label className="workbench-field"><span>To</span><select value={currentToId} onChange={(event) => setToId(event.target.value)} required>
+                  {locations.map((location) => <option key={location.id} value={location.id}>{location.label}</option>)}
                 </select></label>
-              </div> : <p className="workbench-empty-note">No queued packages to assign.</p>}
-              <button className="workbench-secondary-submit" type="submit" disabled={!queuedPackages.length}>Assign package</button>
-            </form>
-
-            <form className="manual-form compact-manual-form" onSubmit={handlePriorityChange}>
-              <div className="form-title-row"><strong>Change priority</strong><span>03 / PRIORITY</span></div>
-              {editablePackages.length ? <div className="workbench-field-grid">
-                <label className="workbench-field"><span>Package</span><select value={currentPriorityPackageId} onChange={(event) => setPriorityPackageId(event.target.value)}>
-                  {editablePackages.map((pkg) => <option key={pkg.id} value={pkg.id}>{pkg.id} · {pkg.priority}</option>)}
-                </select></label>
-                <label className="workbench-field"><span>New priority</span><select value={nextPriority} onChange={(event) => setNextPriority(event.target.value as "normal" | "urgent")}>
+              </div>
+              <div className="workbench-field-grid workbench-field-grid-secondary">
+                <label className="workbench-field"><span>Priority</span><select value={priority} onChange={(event) => setPriority(event.target.value as "normal" | "urgent")}>
                   <option value="normal">Normal</option><option value="urgent">Urgent</option>
                 </select></label>
-              </div> : <p className="workbench-empty-note">No active packages to reprioritize.</p>}
-              <button className="workbench-secondary-submit" type="submit" disabled={!editablePackages.length}>Update priority</button>
-            </form>
-          </div>
-          {manualError ? <p className="workbench-error" role="alert">{manualError}</p> : null}
-          {manualNotice ? <p className="workbench-success" role="status">{manualNotice}</p> : null}
-        </section>
-
-        <section className="workbench-panel command-panel" aria-labelledby="command-title">
-          <div className="workbench-panel-heading">
-            <div><p className="workbench-overline">PROPOSE · REVIEW · APPLY</p><h3 id="command-title">Text command</h3></div>
-            <span className="workbench-panel-mark command-mark" aria-hidden="true">⌁</span>
-          </div>
-          <p className="workbench-copy">Ask for one operation. The result stays a proposal until you review and apply it.</p>
-
-          <form onSubmit={handleCommandPreview}>
-            <div className="command-toolbar">
-              <label className="workbench-field command-mode-field"><span>Interpreter</span><select value={commandMode} onChange={(event) => setCommandMode(event.target.value as "jev" | "openai")}>
-                <option value="jev">Jev · quick commands</option><option value="openai">OpenAI · compound commands</option>
-              </select></label>
-              <span className={`command-readiness ${providerLoading ? "command-readiness-loading" : providerStatus?.jev.ready ? "" : "command-readiness-unavailable"}`}>
-                <i aria-hidden="true" />{providerLoading ? "Checking" : (commandMode === "jev" ? providerStatus?.jev.ready : providerStatus?.command.ready) ? "Ready" : "Unavailable"}
-              </span>
-            </div>
-            <label className="command-text-label" htmlFor="command-text">What should change?</label>
-            <textarea id="command-text" className="command-textarea" value={commandText} onChange={(event) => setCommandText(event.target.value)} placeholder="For example: make pkg-1 urgent, or close road-4" rows={4} />
-            <div className="voice-row">
-              <button className="voice-button" type="button" onClick={isListening ? stopVoiceInput : startVoiceInput} disabled={!voiceSupported && !isListening}>
-                <span aria-hidden="true">{isListening ? "■" : "◉"}</span>{isListening ? "Stop voice input" : voiceSupported ? "Dictate command" : "Voice unavailable"}
+                <label className="workbench-field"><span>Assign courier</span><select value={assignTo} onChange={(event) => setAssignTo(event.target.value)}>
+                  <option value="">Keep queued</option>{simulation.couriers.map((courier) => <option key={courier.id} value={courier.id}>{courier.name} · {courier.packageIds.length}/{courier.capacity}</option>)}
+                </select></label>
+              </div>
+              <button className="workbench-submit" type="submit" disabled={locations.length < 2 || currentFromId === currentToId}>
+                {assignTo ? "Create and assign" : "Add to queue"}<span aria-hidden="true">↗</span>
               </button>
-              <span className="voice-disclosure">Optional browser speech recognition may send audio to its speech service. Review the transcript before previewing.</span>
-            </div>
-            {voiceError ? <p className="workbench-error" role="status">{voiceError}</p> : null}
-            <button className="workbench-submit command-preview-button" type="submit" disabled={commandBusy || !commandText.trim()}>
-              {commandBusy ? "Preparing proposal…" : "Preview command"}<span aria-hidden="true">↗</span>
-            </button>
-          </form>
+            </form>
 
-          {commandError ? <p className="workbench-error" role="alert">{commandError}</p> : null}
-          {proposal ? <div className="command-proposal" aria-live="polite">
-            <div className="proposal-call-receipt">
-              <span><i aria-hidden="true" />{providerLabel(proposal.provider)}</span>
-              <span>{proposal.model}</span>
-              <strong>{proposal.latencyMs} ms</strong>
-            </div>
-            {proposal.clarification ? <p className="clarification-note">{proposal.clarification}</p> : null}
-            {proposal.commands.length ? <>
-              <div className="proposal-list-heading"><strong>Review proposed changes</strong><span>{proposal.commands.length} {proposal.commands.length === 1 ? "change" : "changes"}</span></div>
-              <ol className="command-proposal-list">
-                {proposal.commands.map((command, index) => <li key={`${command.type}-${index}`}>
-                  <span className="command-index">{String(index + 1).padStart(2, "0")}</span>
-                  <span>{commandDescription(command, simulation.map)}</span>
-                  <button type="button" aria-label={`Remove proposed change ${index + 1}`} onClick={() => setProposal((current) => current ? { ...current, commands: current.commands.filter((_, commandIndex) => commandIndex !== index) } : current)}>Remove</button>
-                </li>)}
-              </ol>
-              <button className="apply-proposal-button" type="button" onClick={applyProposal} disabled={!proposal.commands.length}>Apply reviewed changes</button>
-            </> : proposal.clarification ? null : <p className="clarification-note">No changes were proposed.</p>}
-          </div> : null}
-          {proposalNotice ? <p className={proposalNotice.startsWith("Nothing") ? "workbench-error" : "workbench-success"} role="status">{proposalNotice}</p> : null}
-        </section>
+            <details className="package-tools">
+              <summary>Manage existing packages <span className="summary-chevron" aria-hidden="true">⌄</span></summary>
+              <div className="manual-subforms">
+                <form className="manual-form compact-manual-form" onSubmit={handleAssignPackage}>
+                  <strong>Assign queued</strong>
+                  {queuedPackages.length ? <div className="workbench-field-grid">
+                    <label className="workbench-field"><span>Package</span><select value={currentAssignPackageId} onChange={(event) => setAssignPackageId(event.target.value)}>
+                      {queuedPackages.map((pkg) => <option key={pkg.id} value={pkg.id}>{pkg.id} · {locations.find((location) => location.id === pkg.from)?.label ?? pkg.from}</option>)}
+                    </select></label>
+                    <label className="workbench-field"><span>Courier</span><select value={currentAssignCourierId} onChange={(event) => setAssignCourierId(event.target.value)}>
+                      {simulation.couriers.map((courier) => <option key={courier.id} value={courier.id}>{courier.name} · {courier.packageIds.length}/{courier.capacity}</option>)}
+                    </select></label>
+                  </div> : <p className="workbench-empty-note">No queued packages.</p>}
+                  <button className="workbench-secondary-submit" type="submit" disabled={!queuedPackages.length}>Assign package</button>
+                </form>
 
+                <form className="manual-form compact-manual-form" onSubmit={handlePriorityChange}>
+                  <strong>Change priority</strong>
+                  {editablePackages.length ? <div className="workbench-field-grid">
+                    <label className="workbench-field"><span>Package</span><select value={currentPriorityPackageId} onChange={(event) => setPriorityPackageId(event.target.value)}>
+                      {editablePackages.map((pkg) => <option key={pkg.id} value={pkg.id}>{pkg.id} · {pkg.priority}</option>)}
+                    </select></label>
+                    <label className="workbench-field"><span>New priority</span><select value={nextPriority} onChange={(event) => setNextPriority(event.target.value as "normal" | "urgent")}>
+                      <option value="normal">Normal</option><option value="urgent">Urgent</option>
+                    </select></label>
+                  </div> : <p className="workbench-empty-note">No active packages.</p>}
+                  <button className="workbench-secondary-submit" type="submit" disabled={!editablePackages.length}>Update priority</button>
+                </form>
+              </div>
+            </details>
+          </section>
+          </div>
+
+        </details>
+
+      <details className="diagnostics-details" id="diagnostics-details">
+        <summary className="disclosure-summary">
+          <span><strong>Provider diagnostics</strong><small>{providerSummary} · last command {lastCommandCall ? `${lastCommandCall.provider} · ${lastCommandCall.latencyMs} ms` : "none"}</small></span>
+          <span className="disclosure-chevron" aria-hidden="true">⌄</span>
+        </summary>
         <section className="workbench-panel provider-panel" aria-labelledby="provider-title">
           <div className="workbench-panel-heading">
-            <div><p className="workbench-overline">LOCAL STATUS CHECK</p><h3 id="provider-title">Providers</h3></div>
+            <h3 id="provider-title">Provider readiness</h3>
             <button className="provider-refresh" type="button" onClick={() => void refreshProviderStatus()} disabled={providerLoading} aria-label="Refresh provider readiness">↻</button>
           </div>
-          <p className="workbench-copy">Readiness comes from this app’s status endpoint. It does not make a paid request.</p>
-          {providerLoading ? <p className="provider-loading">Checking provider readiness…</p> : providerError ? <p className="workbench-error" role="status">{providerError}</p> : providerStatus ? <div className="provider-list">
+          {providerLoading ? <p className="provider-loading" role="status">Checking provider readiness…</p> : providerError ? <p className="workbench-error" role="alert">{providerError}</p> : providerStatus ? <div className="provider-list">
             <ProviderRow label="Paper map reader" ready={providerStatus.image.ready} detail={`${providerStatus.image.detail} · ${providerStatus.image.model}`} />
             <ProviderRow label="Jev command interpreter" ready={providerStatus.jev.ready} detail={providerStatus.jev.model} />
             <ProviderRow label="Compound command interpreter" ready={providerStatus.command.ready} detail={`${providerStatus.command.detail} · ${providerStatus.command.model}`} />
@@ -422,9 +559,10 @@ export function OperationsWorkbench({ simulation, onApplyCommands }: Props) {
             <span>Last command provider call</span>
             <strong>{lastCommandCall ? `${lastCommandCall.provider} · ${lastCommandCall.latencyMs} ms` : "No command call yet"}</strong>
           </div>
-          <p className="provider-note">Image scan latency appears with its scan receipt above. Readiness never sends the image or command text.</p>
         </section>
-      </div>
+      </details>
+        </div>
+      </details>
     </section>
   );
 }

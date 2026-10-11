@@ -21,8 +21,13 @@ type ParseResponse = z.infer<typeof parseResponseSchema>;
 type PaperworkPanelProps = {
   previousMap: PaperMap;
   startsNewWorld: boolean;
+  mapRevision: number;
   pinnedLocationIds: ReadonlySet<string>;
-  onApply: (map: PaperMap) => string | null;
+  onApply: (map: PaperMap, startsFreshWorld: boolean) => string | null;
+  onPauseSimulation: () => void;
+  onFinishReview: () => void;
+  onStartDemoDeliveries: () => string | null;
+  demoStartAvailable: boolean;
 };
 
 function readDataUrl(file: File): Promise<string> {
@@ -40,7 +45,23 @@ function readDataUrl(file: File): Promise<string> {
 function getErrorMessage(value: unknown, fallback: string) {
   if (typeof value === "object" && value !== null && "error" in value) {
     const error = value.error;
-    if (typeof error === "string" && error.trim()) return error;
+    if (typeof error === "string" && error.trim()) {
+      const messages: Record<string, string> = {
+        invalid_parse_request: "The image could not be validated. Choose a PNG, JPEG, or WebP file up to 1.5 MB.",
+        unsupported_image: "This image format is not supported. Choose a PNG, JPEG, or WebP image.",
+        rate_limited: "Too many scans were requested. Wait a moment, then try again.",
+        provider_busy: "The map reader is handling another request. Try again in a moment; your current map is unchanged.",
+        provider_timeout: "The map reader took too long to respond. Your current map is unchanged; try again.",
+        codex_native_unavailable: "The map reader is unavailable on this app host. Check provider diagnostics or try again later.",
+        codex_unavailable: "The signed-in map reader is unavailable. Check provider diagnostics or try again later.",
+        openai_api_unavailable: "The OpenAI map reader is unavailable. Check provider diagnostics or try again later.",
+        provider_invalid_output: "The map reader returned a result that could not be reviewed safely. Your map is unchanged; try again.",
+        provider_invalid_response: "The map reader returned a result that could not be reviewed safely. Your map is unchanged; try again.",
+        provider_invalid_map: "The map reader returned a map that could not be validated. Your map is unchanged; try again.",
+        provider_failed: "The map reader could not complete the scan. Your map is unchanged; try again.",
+      };
+      return messages[error] ?? (/^[a-z][a-z0-9_]+$/.test(error) ? "The map scan could not be completed. Your current map is unchanged; check provider diagnostics and try again." : error);
+    }
   }
   if (typeof value === "object" && value !== null && "message" in value) {
     const message = value.message;
@@ -59,9 +80,17 @@ function formatBytes(bytes: number) {
   return bytes >= 1_000_000 ? `${(bytes / 1_000_000).toFixed(2)} MB` : `${Math.max(1, Math.round(bytes / 1_000))} KB`;
 }
 
-export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds, onApply }: PaperworkPanelProps) {
+export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinnedLocationIds, onApply, onPauseSimulation, onFinishReview, onStartDemoDeliveries, demoStartAvailable }: PaperworkPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const adjustDetailsRef = useRef<HTMLDetailsElement>(null);
+  const locationKeys = useRef(new Map<string, string>());
+  const fileReadRevision = useRef(0);
+  const sampleLoadRevision = useRef(0);
+  const scanRevision = useRef(0);
+  const scanAbort = useRef<AbortController | null>(null);
+  const demoStartLock = useRef(false);
+  const latestMapRevision = useRef(mapRevision);
   const [file, setFile] = useState<File | null>(null);
   const [imageData, setImageData] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -71,11 +100,18 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [scanNotice, setScanNotice] = useState<string | null>(null);
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applyMessage, setApplyMessage] = useState<string | null>(null);
+  const [demoStartError, setDemoStartError] = useState<string | null>(null);
+  const [isPreparing, setIsPreparing] = useState(false);
+  const [scanStartedAt, setScanStartedAt] = useState<number | null>(null);
+  const [scanElapsedSeconds, setScanElapsedSeconds] = useState(0);
+  const handledMapRevision = useRef(mapRevision);
   const [isScanning, setIsScanning] = useState(false);
   const [parseResult, setParseResult] = useState<ParseResponse | null>(null);
   const [proposal, setProposal] = useState<PaperMap | null>(null);
+  const [proposalOrigin, setProposalOrigin] = useState<"scan" | "manual" | null>(null);
 
   const proposalValidation = useMemo(
     () => proposal ? paperMapSchema.safeParse(proposal) : null,
@@ -88,6 +124,18 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
   }, [previewUrl]);
 
   useEffect(() => {
+    if (demoStartAvailable) demoStartLock.current = false;
+  }, [demoStartAvailable]);
+
+  useEffect(() => {
+    if (!isScanning || scanStartedAt === null) return;
+    const updateElapsed = () => setScanElapsedSeconds(Math.floor((Date.now() - scanStartedAt) / 1_000));
+    updateElapsed();
+    const timer = window.setInterval(updateElapsed, 250);
+    return () => window.clearInterval(timer);
+  }, [isScanning, scanStartedAt]);
+
+  useEffect(() => {
     if (!cameraStream) return;
     if (videoRef.current) videoRef.current.srcObject = cameraStream;
     return () => cameraStream.getTracks().forEach((track) => track.stop());
@@ -97,43 +145,78 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
     cameraStream?.getTracks().forEach((track) => track.stop());
   }, [cameraStream]);
 
+  useEffect(() => {
+    if (handledMapRevision.current === mapRevision) return;
+    handledMapRevision.current = mapRevision;
+    latestMapRevision.current = mapRevision;
+    if (!scanAbort.current && !proposal && !parseResult) return;
+    scanRevision.current += 1;
+    scanAbort.current?.abort();
+    scanAbort.current = null;
+    setIsScanning(false);
+    setScanStartedAt(null);
+    setParseResult(null);
+    setScanNotice(null);
+    setApplyError(null);
+    setApplyMessage(null);
+    setScanError("The map changed while this review was open. Check the current route and scan again if needed.");
+    if (adjustDetailsRef.current?.open) {
+      setProposal(previousMap);
+      setProposalOrigin("manual");
+    } else {
+      setProposal(null);
+      setProposalOrigin(null);
+    }
+  }, [mapRevision, parseResult, previousMap, proposal]);
+
   function clearReview() {
     setParseResult(null);
     setProposal(null);
+    setProposalOrigin(null);
     setScanError(null);
+    setScanNotice(null);
     setApplyError(null);
     setApplyMessage(null);
   }
 
   async function prepareFile(nextFile: File) {
+    onPauseSimulation();
+    sampleLoadRevision.current += 1;
+    const readRevision = ++fileReadRevision.current;
+    scanRevision.current += 1;
+    scanAbort.current?.abort();
+    scanAbort.current = null;
+    setIsScanning(false);
+    setScanStartedAt(null);
+    setIsPreparing(true);
+    setFile(null);
+    setImageData(null);
+    setPreviewUrl(null);
     setImageError(null);
     clearReview();
 
     if (!ALLOWED_IMAGE_TYPES.has(nextFile.type)) {
-      setFile(null);
-      setImageData(null);
-      setPreviewUrl(null);
+      setIsPreparing(false);
       setImageError("Choose a PNG, JPEG, or WebP image.");
       return;
     }
     if (nextFile.size > MAX_IMAGE_BYTES) {
-      setFile(null);
-      setImageData(null);
-      setPreviewUrl(null);
-      setImageError(`This image is ${formatBytes(nextFile.size)}. The limit is 1.5 MB.`);
+      setIsPreparing(false);
+      setImageError(`This image is ${formatBytes(nextFile.size)}. The 1.5 MB limit is required for scanning. Choose a smaller image or capture a new frame.`);
       return;
     }
 
     try {
       const dataUrl = await readDataUrl(nextFile);
+      if (readRevision !== fileReadRevision.current) return;
       setFile(nextFile);
       setImageData(dataUrl);
       setPreviewUrl(URL.createObjectURL(nextFile));
     } catch (error) {
-      setFile(null);
-      setImageData(null);
-      setPreviewUrl(null);
+      if (readRevision !== fileReadRevision.current) return;
       setImageError(getErrorMessage(error, "The selected image could not be read."));
+    } finally {
+      if (readRevision === fileReadRevision.current) setIsPreparing(false);
     }
   }
 
@@ -143,7 +226,24 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
     if (selectedFile) await prepareFile(selectedFile);
   }
 
+  async function loadSampleDrawing() {
+    const requestRevision = ++sampleLoadRevision.current;
+    setImageError(null);
+    try {
+      const response = await fetch("/demo/initial.png", { cache: "force-cache" });
+      if (!response.ok) throw new Error("The sample drawing could not be loaded.");
+      const blob = await response.blob();
+      if (requestRevision !== sampleLoadRevision.current) return;
+      await prepareFile(new File([blob], "sample-initial.png", { type: blob.type || "image/png" }));
+    } catch (error) {
+      if (requestRevision === sampleLoadRevision.current) {
+        setImageError(getErrorMessage(error, "The sample drawing could not be loaded."));
+      }
+    }
+  }
+
   async function openCamera() {
+    onPauseSimulation();
     setCameraError(null);
     setCameraBusy(true);
     try {
@@ -175,6 +275,7 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
   }
 
   async function captureCameraFrame() {
+    onPauseSimulation();
     const video = videoRef.current;
     if (!video || video.videoWidth < 1 || video.videoHeight < 1) {
       setCameraError("The camera preview is still starting. Try capture again in a moment.");
@@ -204,8 +305,16 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
 
   async function analyzeImage() {
     if (!imageData || !file) return;
+    onPauseSimulation();
+    const requestRevision = ++scanRevision.current;
+    const runRevision = mapRevision;
+    const controller = new AbortController();
+    scanAbort.current = controller;
     setIsScanning(true);
+    setScanStartedAt(Date.now());
+    setScanElapsedSeconds(0);
     setScanError(null);
+    setScanNotice(null);
     setApplyError(null);
     setApplyMessage(null);
     setParseResult(null);
@@ -213,6 +322,7 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
     try {
       const response = await fetch("/api/parse-map", {
         method: "POST",
+        signal: controller.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           image: imageData,
@@ -227,12 +337,26 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
       if (!parsed.success) {
         throw new Error("The map service returned an incomplete result. No map was changed.");
       }
+      if (requestRevision !== scanRevision.current) return;
+      if (runRevision !== latestMapRevision.current) {
+        setScanError("The map changed while this scan was in progress. Read it again to build a current proposal.");
+        return;
+      }
       setParseResult(parsed.data);
       setProposal(parsed.data.map);
+      setProposalOrigin("scan");
+      setScanNotice(`${parsed.data.map.locations.length} stops · ${parsed.data.map.roads.length} roads · ${Math.round(parsed.data.latencyMs)} ms`);
+      if (adjustDetailsRef.current) adjustDetailsRef.current.open = true;
     } catch (error) {
-      setScanError(getErrorMessage(error, "The map could not be scanned. Your current world is unchanged."));
+      if (requestRevision === scanRevision.current && !controller.signal.aborted) {
+        setScanError(getErrorMessage(error, "The map could not be scanned. Your current world is unchanged."));
+      }
     } finally {
-      setIsScanning(false);
+      if (requestRevision === scanRevision.current) {
+        scanAbort.current = null;
+        setIsScanning(false);
+        setScanStartedAt(null);
+      }
     }
   }
 
@@ -249,7 +373,35 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
     }));
   }
 
+  function updateLocationId(id: string, nextId: string) {
+    const existing = previousMap.locations.find((location) => location.id === nextId);
+    if (existing && id !== nextId) matchExistingLocation(id, nextId);
+    else {
+      locationKeys.current.set(nextId, locationKeys.current.get(id) ?? id);
+      updateLocation(id, { id: nextId });
+    }
+  }
+
+  function matchExistingLocation(id: string, existingId: string) {
+    const existing = previousMap.locations.find((location) => location.id === existingId);
+    if (!existing) return;
+    const stableKey = locationKeys.current.get(id) ?? id;
+    locationKeys.current.set(existingId, stableKey);
+    updateProposal((current) => ({
+      ...current,
+      locations: current.locations.map((location) => location.id === id
+        ? { ...location, id: existing.id, x: existing.x, y: existing.y }
+        : location),
+      roads: current.roads.map((road) => ({
+        ...road,
+        from: road.from === id ? existing.id : road.from,
+        to: road.to === id ? existing.id : road.to,
+      })),
+    }));
+  }
+
   function removeLocation(locationId: string) {
+    locationKeys.current.delete(locationId);
     updateProposal((current) => ({
       locations: current.locations.filter((location) => location.id !== locationId),
       roads: current.roads.filter((road) => road.from !== locationId && road.to !== locationId),
@@ -277,33 +429,65 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
   }
 
   function handleApply() {
-    if (!proposal || !proposalValidation?.success || !parseResult?.requiresReview) return;
+    if (!proposal || !proposalValidation?.success) return;
+    if (proposalOrigin === "scan" && !parseResult?.requiresReview) return;
+    const startsFreshWorld = proposalOrigin === "scan" && startsNewWorld;
+    onFinishReview();
     setApplyError(null);
-    const error = onApply(proposalValidation.data);
+    const error = onApply(proposalValidation.data, startsFreshWorld);
     if (error) {
       setApplyError(error);
       return;
     }
     setProposal(null);
-    setApplyMessage(startsNewWorld
-      ? "New world started. No sample packages or movement were carried over."
-      : "Map applied. Existing simulation state was preserved.");
+    setProposalOrigin(null);
+    setParseResult(null);
+    setScanNotice(null);
+    if (adjustDetailsRef.current) adjustDetailsRef.current.open = false;
+    setApplyMessage(startsFreshWorld
+      ? "Map confirmed. Start deliveries when you are ready."
+      : "Map changes confirmed. Positions and progress were preserved; playback is paused.");
+    setDemoStartError(null);
+    demoStartLock.current = false;
   }
 
-  const canApply = Boolean(proposal && proposalValidation?.success && parseResult?.requiresReview);
+  function handleAdjustToggle(event: React.SyntheticEvent<HTMLDetailsElement>) {
+    if (event.currentTarget.open && !proposal) {
+      onPauseSimulation();
+      setProposal(previousMap);
+      setProposalOrigin("manual");
+      setParseResult(null);
+      setApplyError(null);
+      setApplyMessage(null);
+      setScanError(null);
+    }
+  }
+
+  function handleStartDemoDeliveries() {
+    if (!demoStartAvailable || demoStartLock.current) return;
+    demoStartLock.current = true;
+    setDemoStartError(null);
+    const error = onStartDemoDeliveries();
+    if (error) {
+      demoStartLock.current = false;
+      setDemoStartError(error);
+      return;
+    }
+    setApplyMessage("Two demo deliveries were assigned and are moving.");
+  }
+
+  const canApply = Boolean(
+    proposal && proposalValidation?.success && (proposalOrigin === "manual" || parseResult?.requiresReview),
+  );
 
   return (
-    <section className="paperwork-panel" aria-labelledby="paperwork-title">
+    <section id="paperwork-panel" className="paperwork-panel" aria-labelledby="paperwork-title">
       <div className="panel-heading">
         <div>
-          <p className="section-kicker">PAPER INPUT</p>
-          <h2 id="paperwork-title">Capture a route sketch</h2>
+          <h2 id="paperwork-title">Paper map</h2>
         </div>
-        <span className="panel-index">01</span>
+        <span className="panel-status">{parseResult ? "Ready to review" : isPreparing ? "Preparing image" : "Scan a sketch"}</span>
       </div>
-      <p className="panel-description">
-        Photograph or upload a paper map. The scan becomes a proposal for you to review.
-      </p>
 
       <div className={`paper-preview ${previewUrl ? "paper-preview-has-image" : ""}`}>
         {cameraOpen ? (
@@ -331,28 +515,23 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
               <circle cx="98" cy="61" r="4" />
               <path d="M49 92h49" />
             </svg>
-            <span className="paper-empty-title">Your sketch, translated</span>
-            <span className="paper-empty-copy">The original stays here while you review the map proposal.</span>
+            <span className="paper-empty-title">Choose a route sketch</span>
           </div>
         )}
       </div>
 
-      <div className="drawing-guide" aria-label="How to mark the paper map">
-        <div className="drawing-guide-heading">
-          <span className="section-kicker">DRAWING KEY</span>
-          <strong>Make every connection explicit</strong>
-        </div>
+      <details className="drawing-guide">
+        <summary>Drawing key</summary>
         <div className="drawing-guide-key" aria-label="Stop and road symbols">
           <span><i className="guide-node guide-depot">D</i>Depot</span>
           <span><i className="guide-node guide-home">H</i>Home</span>
           <span><i className="guide-node guide-shop">S</i>Shop</span>
           <span><i className="guide-node guide-junction">J</i>Junction</span>
-          <span><i className="guide-road" aria-hidden="true" />Road · both ways</span>
+          <span><i className="guide-road" aria-hidden="true" />Two-way road</span>
           <span><i className="guide-closed" aria-hidden="true" />Closed road</span>
         </div>
-        <p>Give each stop a distinct, readable label and reuse it where each road ends. Draw one continuous line to connect stops.</p>
-        <p>Roads work both ways. Mark a closed road with a red X. Lines that meet are connected only at a labeled junction.</p>
-      </div>
+        <p>Label each stop. Roads go both ways; use a red X to close one. Lines connect only at a labeled stop.</p>
+      </details>
 
       {file ? (
         <div className="selected-file" aria-live="polite">
@@ -366,18 +545,21 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
 
       <input
         ref={fileInputRef}
+        id="paper-map-input"
         className="visually-hidden"
         type="file"
         accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
         capture="environment"
         aria-label="Choose or capture a paper map image"
         onChange={handleFileInput}
-        disabled={isScanning}
       />
 
       <div className="capture-actions">
-        <button className="button button-secondary" type="button" onClick={() => fileInputRef.current?.click()} disabled={isScanning}>
+        <button className="button button-secondary" type="button" onClick={() => fileInputRef.current?.click()}>
           <span aria-hidden="true">↑</span> Upload photo
+        </button>
+        <button className="button button-quiet" type="button" onClick={() => void loadSampleDrawing()} disabled={isPreparing}>
+          Use sample sketch
         </button>
         {cameraOpen ? (
           <>
@@ -393,15 +575,18 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
         )}
       </div>
 
+      {isPreparing ? <p className="scan-status" role="status">Preparing image…</p> : null}
+      {isScanning ? <p className="scan-progress" role="status" aria-live="polite">Reading map · {scanElapsedSeconds >= 60 ? `${Math.floor(scanElapsedSeconds / 60)}m ${scanElapsedSeconds % 60}s` : `${scanElapsedSeconds}s`} elapsed. Nothing is applied yet.</p> : null}
       {imageError ? <p className="inline-error" role="alert">{imageError}</p> : null}
       {cameraError ? <p className="inline-error" role="alert">{cameraError}</p> : null}
       {scanError ? <p className="inline-error" role="alert">{scanError}</p> : null}
 
-      <button className="scan-button" type="button" onClick={analyzeImage} disabled={!imageData || isScanning || cameraOpen}>
-        <span>{isScanning ? "Reading the drawing…" : "Read paper map"}</span>
+      <button className="scan-button" type="button" onClick={analyzeImage} disabled={!imageData || isPreparing || isScanning || cameraOpen}>
+        <span>{isScanning ? "Reading map…" : "Read paper map"}</span>
         <span aria-hidden="true">{isScanning ? <span className="button-spinner" /> : "↗"}</span>
       </button>
-      <p className="privacy-note">Nothing is sent until you choose <strong>Read paper map</strong>.</p>
+      <p className="privacy-note">The image is sent only when you choose Read paper map.</p>
+      {scanNotice ? <p className="scan-status" role="status">{scanNotice} · review required</p> : null}
 
       {parseResult ? (
         <div className="parse-receipt" aria-live="polite">
@@ -425,25 +610,29 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
         </div>
       ) : null}
 
-      {proposal ? (
-        <div className="proposal-area">
+      <details ref={adjustDetailsRef} id="adjust-details" className={`proposal-area${proposal ? " has-proposal" : ""}`} onToggle={handleAdjustToggle}>
+        <summary className="adjust-summary">
+          <span><strong>Adjust map</strong><small>{proposal ? proposalOrigin === "manual" ? "Edit the current route" : "Edit the scanned proposal" : "Open the current route editor"}</small></span>
+          <span className="proposal-count">{proposal ? `${proposal.locations.length} stops · ${proposal.roads.length} roads` : ""}</span>
+          <span className="summary-chevron" aria-hidden="true">⌄</span>
+        </summary>
+        {proposal ? (
+          <div className="proposal-content">
           <div className="proposal-heading">
             <div>
-              <p className="section-kicker">EDITABLE PROPOSAL</p>
-              <h3>Review the network</h3>
+              <p className="section-kicker">{proposalOrigin === "manual" ? "CURRENT ROUTE" : "PROPOSED MAP"}</p>
+              <h3>{proposalOrigin === "manual" ? "Edit network" : "Review before applying"}</h3>
             </div>
             <span className="proposal-count">{proposal.locations.length} / {proposal.roads.length}</span>
           </div>
-          <p className="proposal-subtext">Stops / roads · edits here do not change the running world.</p>
 
-          {parseResult?.requiresReview ? (
+          {proposalOrigin === "scan" && parseResult?.requiresReview ? (
             <div className="proposal-review-banner">
-              <span aria-hidden="true">◌</span>
-              <span>Check every stop and connection before applying.</span>
+              <span>Review stops and connections before applying.</span>
             </div>
           ) : null}
 
-          <details className="proposal-editor" open>
+          <details className="proposal-editor">
             <summary>
               <span>Stops</span>
               <span className="summary-count">{proposal.locations.length}</span>
@@ -454,20 +643,16 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
                 const pinned = !startsNewWorld && pinnedLocationIds.has(location.id);
                 const canRemove = !pinned && proposal.locations.length > 1;
                 return (
-                  <div className="proposal-location-row" key={location.id}>
-                    <div className="proposal-row-top">
-                      <label className="field-label" htmlFor={`location-label-${location.id}`}>Name</label>
-                      <span className="proposal-id">{location.id}</span>
-                    </div>
-                    <div className="proposal-input-grid">
-                      <input
+                <div className="proposal-location-row" key={locationKeys.current.get(location.id) ?? location.id}>
+                    <div className="proposal-input-grid location-input-grid">
+                      <label className="proposal-field"><span>Name</span><input
                         id={`location-label-${location.id}`}
                         className="field-input location-name-input"
                         aria-label={`Name for ${location.id}`}
                         value={location.label}
                         maxLength={80}
                         onChange={(event) => updateLocation(location.id, { label: event.currentTarget.value })}
-                      />
+                      /></label>
                       <select
                         className="field-input"
                         aria-label={`Type for ${location.label}`}
@@ -479,7 +664,29 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
                         <option value="shop">Shop</option>
                         <option value="junction">Junction</option>
                       </select>
+                      <label className="proposal-field proposal-field-id"><span>ID</span><input
+                        className="field-input"
+                        aria-label={`ID for ${location.label}`}
+                        value={location.id}
+                        maxLength={24}
+                        disabled={pinned}
+                        onChange={(event) => updateLocationId(location.id, event.currentTarget.value)}
+                      /></label>
                     </div>
+                    {proposalOrigin === "scan" && !startsNewWorld ? (() => {
+                      const availableMatches = previousMap.locations.filter((existing) =>
+                        !proposal.locations.some((candidate) => candidate.id === existing.id && candidate.id !== location.id),
+                      );
+                      return availableMatches.length ? <label className="match-location-field">
+                        <span>Match current stop</span>
+                        <select className="field-input" aria-label={`Match ${location.label} to a current stop`} value="" onChange={(event) => {
+                          if (event.currentTarget.value) matchExistingLocation(location.id, event.currentTarget.value);
+                        }}>
+                          <option value="">Choose a stop to keep its position</option>
+                          {availableMatches.map((existing) => <option key={existing.id} value={existing.id}>{existing.label} · {existing.id}</option>)}
+                        </select>
+                      </label> : null;
+                    })() : null}
                     <div className="proposal-coordinate-row">
                       <label className="coordinate-field">
                         <span>X</span>
@@ -628,23 +835,24 @@ export function PaperworkPanel({ previousMap, startsNewWorld, pinnedLocationIds,
               {proposalValidation.error.issues[0]?.message ?? "Review the map fields before applying."}
             </p>
           ) : (
-            <p className="validation-success"><span aria-hidden="true">✓</span> Map structure is valid for review.</p>
+            <p className="validation-success"><span aria-hidden="true">✓</span> Stops, IDs, and road endpoints are valid.</p>
           )}
 
           {applyError ? <p className="inline-error" role="alert">{applyError}</p> : null}
           <button className="apply-map-button" type="button" onClick={handleApply} disabled={!canApply}>
-            <span>{startsNewWorld ? "Apply & start this world" : "Apply map update"}</span>
+            <span>{proposalOrigin === "scan" ? startsNewWorld ? "Confirm map" : "Confirm changes" : "Apply map update"}</span>
             <span aria-hidden="true">↗</span>
           </button>
-          {startsNewWorld ? (
-            <p className="apply-note">Starting this scan replaces the labeled sample run with a fresh, empty simulation.</p>
-          ) : (
-            <p className="apply-note">Applying keeps courier positions, package assignments, priorities, and event history.</p>
-          )}
-        </div>
-      ) : null}
+          </div>
+        ) : <p className="adjust-empty-state">Scan a sketch to review and edit its stops, IDs, connections, and road status.</p>}
+      </details>
 
       {applyMessage ? <p className="apply-success" role="status">{applyMessage}</p> : null}
+      {demoStartAvailable ? <div className="demo-start-panel">
+        <div><strong>Map confirmed</strong><span>Start a demo with two labeled deliveries and two couriers.</span></div>
+        <button className="demo-start-button" type="button" onClick={handleStartDemoDeliveries}>Start deliveries <span aria-hidden="true">▶</span></button>
+      </div> : null}
+      {demoStartError ? <p className="inline-error" role="alert">{demoStartError}</p> : null}
     </section>
   );
 }
