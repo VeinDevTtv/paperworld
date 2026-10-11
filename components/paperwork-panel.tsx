@@ -90,6 +90,8 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
   const scanRevision = useRef(0);
   const scanAbort = useRef<AbortController | null>(null);
   const demoStartLock = useRef(false);
+  const proposalRef = useRef<PaperMap | null>(null);
+  const suppressProgrammaticAdjustToggleRef = useRef(false);
   const latestMapRevision = useRef(mapRevision);
   const [file, setFile] = useState<File | null>(null);
   const [imageData, setImageData] = useState<string | null>(null);
@@ -122,6 +124,10 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
     if (!previewUrl) return;
     return () => URL.revokeObjectURL(previewUrl);
   }, [previewUrl]);
+
+  useEffect(() => {
+    proposalRef.current = proposal;
+  }, [proposal]);
 
   useEffect(() => {
     if (demoStartAvailable) demoStartLock.current = false;
@@ -161,9 +167,11 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
     setApplyMessage(null);
     setScanError("The map changed while this review was open. Check the current route and scan again if needed.");
     if (adjustDetailsRef.current?.open) {
+      proposalRef.current = previousMap;
       setProposal(previousMap);
       setProposalOrigin("manual");
     } else {
+      proposalRef.current = null;
       setProposal(null);
       setProposalOrigin(null);
     }
@@ -171,6 +179,7 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
 
   function clearReview() {
     setParseResult(null);
+    proposalRef.current = null;
     setProposal(null);
     setProposalOrigin(null);
     setScanError(null);
@@ -318,6 +327,7 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
     setApplyError(null);
     setApplyMessage(null);
     setParseResult(null);
+    proposalRef.current = null;
     setProposal(null);
     try {
       const response = await fetch("/api/parse-map", {
@@ -343,10 +353,15 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
         return;
       }
       setParseResult(parsed.data);
+      proposalRef.current = parsed.data.map;
       setProposal(parsed.data.map);
       setProposalOrigin("scan");
       setScanNotice(`${parsed.data.map.locations.length} stops · ${parsed.data.map.roads.length} roads · ${Math.round(parsed.data.latencyMs)} ms`);
-      if (adjustDetailsRef.current) adjustDetailsRef.current.open = true;
+      const adjustDetails = adjustDetailsRef.current;
+      if (adjustDetails && !adjustDetails.open) {
+        suppressProgrammaticAdjustToggleRef.current = true;
+        adjustDetails.open = true;
+      }
     } catch (error) {
       if (requestRevision === scanRevision.current && !controller.signal.aborted) {
         setScanError(getErrorMessage(error, "The map could not be scanned. Your current world is unchanged."));
@@ -361,7 +376,12 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
   }
 
   function updateProposal(updater: (current: PaperMap) => PaperMap) {
-    setProposal((current) => current ? updater(current) : current);
+    const current = proposalRef.current;
+    if (current) {
+      const next = updater(current);
+      proposalRef.current = next;
+      setProposal(next);
+    }
     setApplyError(null);
     setApplyMessage(null);
   }
@@ -377,8 +397,18 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
     const existing = previousMap.locations.find((location) => location.id === nextId);
     if (existing && id !== nextId) matchExistingLocation(id, nextId);
     else {
-      locationKeys.current.set(nextId, locationKeys.current.get(id) ?? id);
-      updateLocation(id, { id: nextId });
+      const stableKey = locationKeys.current.get(id) ?? id;
+      locationKeys.current.delete(id);
+      locationKeys.current.set(nextId, stableKey);
+      updateProposal((current) => ({
+        ...current,
+        locations: current.locations.map((location) => location.id === id ? { ...location, id: nextId } : location),
+        roads: current.roads.map((road) => ({
+          ...road,
+          from: road.from === id ? nextId : road.from,
+          to: road.to === id ? nextId : road.to,
+        })),
+      }));
     }
   }
 
@@ -440,6 +470,7 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
       return;
     }
     setProposal(null);
+    proposalRef.current = null;
     setProposalOrigin(null);
     setParseResult(null);
     setScanNotice(null);
@@ -452,8 +483,13 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
   }
 
   function handleAdjustToggle(event: React.SyntheticEvent<HTMLDetailsElement>) {
-    if (event.currentTarget.open && !proposal) {
+    if (suppressProgrammaticAdjustToggleRef.current) {
+      suppressProgrammaticAdjustToggleRef.current = false;
+      return;
+    }
+    if (event.currentTarget.open && !proposalRef.current) {
       onPauseSimulation();
+      proposalRef.current = previousMap;
       setProposal(previousMap);
       setProposalOrigin("manual");
       setParseResult(null);
