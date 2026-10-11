@@ -575,13 +575,18 @@ function validateProposedCommands(commands: Command[], context: z.infer<typeof c
 
 function dispatchRequestClauses(text: string): string[] {
   return text.split(/\s+\b(?:and|then)\s+(?=(?:dispatch|send|deliver|assign|set|open|close|reopen|change|update|create)\b|(?:a|another|the next|one more)\s+delivery\b)/iu)
-    .filter((clause) => /\b(?:dispatch|send|deliver)\b|\b(?:a|another|the next|one more)\s+delivery\b/iu.test(clause));
+    .filter((clause) => /\b(?:dispatch|send|deliver)\b|\bcreate\b(?=[^.!?;]{0,80}\bdelivery\b)/iu.test(clause));
 }
 
 function resolveDispatchCouriers(commands: Command[], context: z.infer<typeof commandRequestSchema>): { commands: Command[]; error?: string } {
   const courierEntries = context.couriers.map((courier) => ({ id: courier.id, name: courier.name }));
   const dispatchIndexes = commands.flatMap((command, index) => command.type === "dispatch-delivery" ? [index] : []);
   const clauses = dispatchRequestClauses(context.text);
+  const allMentionedCouriers = exactMentions(context.text, courierEntries);
+  if (dispatchIndexes.length > 0 && clauses.length !== dispatchIndexes.length &&
+      (ambiguousMentionIds(context.text, courierEntries).size > 0 || allMentionedCouriers.length > 0)) {
+    return { commands, error: "Name the courier in one clear delivery clause, or leave couriers unspecified for automatic assignment." };
+  }
   const alignedClauses = clauses.length === dispatchIndexes.length ? clauses : [];
   const planningCouriers = context.couriers.map((courier) => ({ ...courier, packageIds: [...courier.packageIds] }));
   const nextCommands = [...commands];
@@ -595,7 +600,13 @@ function resolveDispatchCouriers(commands: Command[], context: z.infer<typeof co
     }
     const requestedCourierId = mentionedCouriers[0];
     const courierId = selectAvailableCourierForDelivery(context.map, planningCouriers, command.from, command.to, requestedCourierId);
-    if (!courierId) continue;
+    if (!courierId) {
+      if (requestedCourierId) {
+        const courierName = courierEntries.find((courier) => courier.id === requestedCourierId)?.name ?? requestedCourierId;
+        return { commands, error: `${courierName} does not have capacity and a reachable route for this delivery. Choose another courier or leave the courier unspecified for automatic assignment.` };
+      }
+      continue;
+    }
     const planningCourier = planningCouriers.find((courier) => courier.id === courierId);
     planningCourier?.packageIds.push("planned-" + (dispatchOrder + 1));
     nextCommands[index] = { ...command, courierId };

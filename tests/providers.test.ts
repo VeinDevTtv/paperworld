@@ -167,6 +167,60 @@ test("automatic dispatch clarifies when a named courier is ambiguous", async () 
   });
 });
 
+test("automatic create-delivery wording preserves the explicitly named courier", async () => {
+  await withMockedTypeSafe(typeSafeDecision("dispatch_delivery", "urgent"), async () => {
+    const proposal = await proposeCommand({
+      text: "Create an urgent delivery from Depot to Home with Rook",
+      map,
+      packages: [],
+      couriers: [
+        { ...courier, id: "bike-1", name: "Mina" },
+        { ...courier, id: "bike-2", name: "Rook" },
+      ],
+    });
+    assert.deepEqual(proposal.commands, [{
+      type: "dispatch-delivery",
+      from: "A",
+      to: "B",
+      priority: "urgent",
+      courierId: "bike-2",
+    }]);
+    assert.equal(proposal.clarification, null);
+  });
+});
+
+test("automatic dispatch clarifies instead of dropping a courier mention it cannot align", async () => {
+  await withMockedTypeSafe(typeSafeDecision("dispatch_delivery"), async () => {
+    const proposal = await proposeCommand({
+      text: "Arrange an urgent delivery from Depot to Home with Rook",
+      map,
+      packages: [],
+      couriers: [
+        { ...courier, id: "bike-1", name: "Mina" },
+        { ...courier, id: "bike-2", name: "Rook" },
+      ],
+    });
+    assert.deepEqual(proposal.commands, []);
+    assert.match(proposal.clarification ?? "", /courier in one clear delivery clause/i);
+  });
+});
+
+test("automatic dispatch clarifies when its explicitly named courier lacks capacity", async () => {
+  await withMockedTypeSafe(typeSafeDecision("dispatch_delivery"), async () => {
+    const proposal = await proposeCommand({
+      text: "Send a delivery from Depot to Home with Mina",
+      map,
+      packages: [{ id: "pkg-1", from: "A", to: "B", priority: "normal", status: "assigned", pickedUp: false, courierId: "bike-1", createdOrder: 1 }],
+      couriers: [
+        { ...courier, id: "bike-1", name: "Mina", packageIds: ["pkg-1"], capacity: 1 },
+        { ...courier, id: "bike-2", name: "Rook", capacity: 2 },
+      ],
+    });
+    assert.deepEqual(proposal.commands, []);
+    assert.match(proposal.clarification ?? "", /Mina does not have capacity/i);
+  });
+});
+
 test("automatic compound delivery routing scopes courier names and reports total Jev-to-Codex latency", async () => {
   let codexPrompt = "";
   const classifierStarted = performance.now();

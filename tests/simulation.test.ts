@@ -229,6 +229,28 @@ test("dispatch-delivery failure leaves no partial package when no courier has ca
   assert.match(result.error, /capacity/i);
 });
 
+test("dispatch-delivery never reassigns when an explicitly selected courier is unavailable", () => {
+  const initial = createSimulation(map, [
+    { id: "bike-1", name: "Mina", locationId: "A", capacity: 1 },
+    { id: "bike-2", name: "Rook", locationId: "A", capacity: 2 },
+  ]);
+  const occupied = apply(initial, [
+    { type: "create-package", from: "A", to: "B", priority: "normal" },
+    { type: "assign-package", packageId: "pkg-1", courierId: "bike-1" },
+  ]);
+  const result = applyCommands(occupied, [{
+    type: "dispatch-delivery",
+    from: "A",
+    to: "B",
+    priority: "normal",
+    courierId: "bike-1",
+  }]);
+  assert.equal(result.accepted, false);
+  assert.deepEqual(result.state, occupied);
+  assert.match(result.error, /selected courier.*capacity/i);
+  assert.deepEqual(result.state.couriers.find((candidate) => candidate.id === "bike-2")?.packageIds, []);
+});
+
 test("demo start uses the current map routes, labels its packages, and cannot run twice", () => {
   const initial = createSimulation(map);
   const result = startDemoDeliveries(initial);
