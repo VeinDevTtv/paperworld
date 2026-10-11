@@ -36,6 +36,17 @@ Large supported photos are compressed locally before scanning; check that labels
 
 Generated PNG rehearsal tests real image inference, reviewed map updates, deterministic movement, command validation, and the recovery loop. It does not establish arbitrary handwriting recognition or physical camera operation. User separately reported a handwritten recovery loop and supplied physical dictation/dispatch/completion screenshots. Browser/device coverage still needs rehearsal. See [current verification](release-verification.md) for performed checks and remaining limits.
 
-## Backup clip
+## Optional synthetic camera rehearsal
+
+This deliberately replaces camera input and proves browser capture wiring, not physical hardware. On localhost, open browser developer tools Console and load the explicit fixture:
+
+```javascript
+await import('/demo/synthetic-camera.js');
+await paperworldSyntheticCamera.stage('initial');
+```
+
+Use the real **Use camera → Capture frame → Read paper map → Confirm map → Start deliveries** controls. Pause early. Before each capture, run `await paperworldSyntheticCamera.stage('initial', true)` for shifted/rotated repositioning, then `'blocked'`, `'reconnected'`, and `'new-home'` in order. Each road update still requires confirmation. Step to verify the same package waits/completes; send a delivery to NEW HOME N afterward. Finish with `paperworldSyntheticCamera.restore()` or refresh. Do not leave this fixture enabled during a physical camera test.
+
+## Backup clip file
 
 Local fallback: `.local/evidence/paperworld-backup-synthetic-live.mp4` (66 seconds, no audio). It is visibly labeled synthetic-photo demo with live Codex/Jev. It shows the closure, priority update, added connection and same package completion. Some frames are soft; record your physical two-minute rehearsal for submission when possible. Play this clip before rehearsal to verify the file on your device. Do not describe it as physical-camera footage or a live request when replaying it.

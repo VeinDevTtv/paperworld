@@ -148,6 +148,8 @@ export function PaperworldWorkspace() {
   useEffect(() => () => { if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current); }, []);
   const [scenario, setScenario] = useState<"sample" | "scanned">("sample");
   const [isPlaying, setIsPlaying] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
+  const demoStartAvailable = scenario === "scanned" && !simulation.packages.some((pkg) => pkg.source === "demo");
   const [playbackSpeed, setPlaybackSpeed] = useState<0.25 | 1 | 4>(0.25);
   const [worldRevision, setWorldRevision] = useState(0);
   const [mapRevision, setMapRevision] = useState(0);
@@ -292,6 +294,7 @@ export function PaperworldWorkspace() {
   function applyProposedMap(map: PaperMap, startsFreshWorld: boolean) {
     const changes = getRoadChanges(simulationRef.current.map, map);
     if (startsFreshWorld) {
+      setStartError(null);
       if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
       setDeliveryFeedback(null);
       lastEventRef.current = 0;
@@ -328,6 +331,7 @@ export function PaperworldWorkspace() {
   }
 
   function startDemoRun() {
+    setStartError(null);
     const result = startDemoDeliveries(simulationRef.current);
     if (!result.accepted) return result.error;
     updateSimulation(() => result.state);
@@ -340,6 +344,7 @@ export function PaperworldWorkspace() {
   }
 
   function resetSimulation() {
+    setStartError(null);
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
     setDeliveryFeedback(null);
     lastEventRef.current = 0;
@@ -405,18 +410,22 @@ export function PaperworldWorkspace() {
           <button
             className={`simulation-toggle ${isPlaying ? "simulation-toggle-playing" : ""}`}
             type="button"
-            onClick={togglePlayback}
-            aria-label={isPlaying ? "Pause simulation" : "Resume simulation"}
-            aria-pressed={isPlaying}
+            onClick={() => {
+              if (demoStartAvailable) setStartError(startDemoRun());
+              else togglePlayback();
+            }}
+            aria-label={demoStartAvailable ? "Start deliveries" : isPlaying ? "Pause simulation" : "Resume simulation"}
+            aria-pressed={demoStartAvailable ? undefined : isPlaying}
           >
             <span className="simulation-toggle-icon" aria-hidden="true">{isPlaying ? "Ⅱ" : "▶"}</span>
-            <span>{isPlaying ? "Pause" : "Resume"}</span>
+            <span>{demoStartAvailable ? "Start deliveries" : isPlaying ? "Pause" : "Resume"}</span>
           </button>
         </div>
       </header>
 
       <main id="main" className="main-content">
         <h1 className="visually-hidden">Paperworld delivery demo</h1>
+        {startError ? <p className="workspace-status workspace-status-error" role="alert">{startError}</p> : null}
 
         <div className="delivery-feedback" role="status" aria-live="polite">{deliveryFeedback}</div>
         <div className="workspace-grid">
@@ -464,7 +473,7 @@ export function PaperworldWorkspace() {
             onPauseSimulation={pauseForPaperwork}
             onFinishReview={finishPaperworkReview}
             onStartDemoDeliveries={startDemoRun}
-      demoStartAvailable={scenario === "scanned" && !simulation.packages.some((pkg) => pkg.source === "demo")}
+      demoStartAvailable={demoStartAvailable}
           />
         </div>
 

@@ -9,7 +9,7 @@ Current baseline: `bfdc341`. This checklist tracks the new release; previous evi
 | Dictation state and recovery | PASS: MOCKED + USER PHYSICAL | Listening/processing/error/retry/late-old-end mocked; user physical transcript, proposal and pkg-4 completion screenshots; Brave network failure retained |
 | Provider failure and duplicate/stale actions | PASS: CODE + MOCKED UI | Jev network/429/timeout no fallback; double preview1 call; double confirm1 package; reset/stale flows; accelerated90sec scan transport timeout/late response with live retry passed |
 | Paired routing benchmark | PASS: SMALL LIVE SAMPLE | Final12 requests×2 modes=24/24 exact outcomes; earlier5+5 failures retained; isolated post-fix timeout; docs/benchmark.md |
-| Educator novice feedback | BLOCKED: USER | Requested novice task and actual observations; no feedback yet |
+| Educator novice feedback | SIMULATED REVIEW; HUMAN NOT TRIED | Agent walkthrough found Resume versus Start hesitation; header action corrected. No human/classroom validation. User physical task requested again for 3D release. |
 | Physical handwriting/webcam and camera reposition | PARTIAL: USER PHYSICAL | User reports handwritten closure/recovery works; independent synthetic live repeat passed (same pkg-1 delivered once0:14); webcam/new home/reposition not separately established |
 | Physical microphone | PASS: USER PHYSICAL | User reported Dictate worked; screenshots show dictated Depot to North shop proposal then pkg-4 Delivery complete, Delivered1 Waiting0; successful browser appears Chrome, version/device unreported |
 | Optional paid API adapter | NOT RUN | No billing authorization; disabled |
@@ -21,3 +21,9 @@ Current baseline: `bfdc341`. This checklist tracks the new release; previous evi
 | Rehearsal / submission reserve | SET | User deadline8pm Pacific2026-10-11; reserve6:30-8pm local. User said PST; following local Pacific clock unless organizer specifies fixed UTC-8 |
 
 Evidence labels: physical = actual device/paper; synthetic = generated raster with live inference; mocked = substituted browser/provider behavior; replayed = recorded response reused. DOM checks are not visual approval.
+
+## Active goal amendment: interactive 3D
+
+User explicitly replaced the earlier no-3D constraint on 2026-10-11. Required: actual Three.js meshes/light/shadows, bounded orbit/zoom, authoritative-engine positions, accepted-change animations, selection, 2D fallback/context-loss recovery, no inference on view switches, reduced motion, measured performance, and full integrated release gates. Core timebox two hours, polish45 minutes; comparison45 minutes only after core acceptance. Feature freeze remains6:30pm Pacific, submission8pm. Renderer/UI owner input; root integration/tests/docs/dependencies; separate reviewer. Comparison is a stretch, not a substitute for the core loop.
+
+Checkpoint before 3D: 49 tests and typecheck pass; synthetic canvas camera capture through actual camera controls, reposition/closure/reconnection preserved package IDs and exact courier transforms; pkg-1 completed once0:12, new home accepted and urgent pkg-3 completed0:39. Six live Codex scans include one repeated closure after uncertain browser-host response; live Jev dispatch130ms. Raw evidence: docs/evidence/synthetic-camera.json. Fixture initial-frame issue corrected with repaint/frame pump. Mobile390px Start label/no-overflow and duplicate-start two-package state verified by DOM; screenshot capture timed out, so no new visual approval claimed.

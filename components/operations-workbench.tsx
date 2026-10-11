@@ -395,7 +395,7 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
       setProposalNotice(`Nothing was applied. ${error}`);
       return;
     }
-    setProposalNotice(`${proposal.commands.length} ${proposal.commands.length === 1 ? "change" : "changes"} applied atomically.`);
+    setProposalNotice(`${proposal.commands.length} ${proposal.commands.length === 1 ? "change" : "changes"} applied.`);
     setProposal(null);
   }
 
@@ -516,9 +516,6 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
 
   return (
     <section className="workbench-section" aria-label="Dispatch and diagnostics">
-      <div className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
-        {manualError ?? commandError ?? manualNotice ?? proposalNotice ?? ""}
-      </div>
       {manualError ? <p className="workspace-status workspace-status-error" role="alert">{manualError}</p> : null}
       {commandError ? <div className="workspace-status workspace-status-error"><p role="alert">{commandError}</p><button className="workbench-secondary-submit" type="button" disabled={commandBusy} onClick={() => void handleCommandPreview()}>Retry</button>{providerStatus?.command.provider === "codex" && providerStatus.command.ready ? <button className="workbench-secondary-submit" type="button" disabled={commandBusy} onClick={() => void handleCommandPreview(undefined, "codex")}>Use Codex</button> : null}</div> : null}
       {voiceError ? <div className="workspace-status workspace-status-error"><p role="alert">{voiceError}</p>{voiceSupported ? <button className="workbench-secondary-submit" type="button" disabled={commandBusy || isListening} onClick={startVoiceInput}>Retry dictation</button> : null}</div> : null}
