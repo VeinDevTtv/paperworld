@@ -6,6 +6,7 @@ import {
   createSimulation,
   getCourierPosition,
   getMetrics,
+  startDemoDeliveries,
   shortestPath,
   tick,
 } from "../lib/simulation";
@@ -179,6 +180,81 @@ test("priority update changes the next stop and capacity prevents an extra assig
   state = tick(state, 1);
   state = tick(state, 0.1);
   assert.equal(state.couriers[0]?.segment?.roadId, "J-C");
+});
+
+test("dispatch-delivery allocates and assigns atomically without a premature pickup", () => {
+  const initial = createSimulation(map, [
+    { id: "bike-2", name: "Rook", locationId: "A", capacity: 1 },
+    { id: "bike-1", name: "Mina", locationId: "A", capacity: 1 },
+  ]);
+  const result = applyCommands(initial, [{
+    type: "dispatch-delivery",
+    from: "A",
+    to: "B",
+    priority: "normal",
+  }]);
+  assert.equal(result.accepted, true);
+  if (!result.accepted) return;
+  assert.deepEqual(result.state.packages, [{
+    id: "pkg-1",
+    source: "user",
+    from: "A",
+    to: "B",
+    priority: "normal",
+    status: "assigned",
+    pickedUp: false,
+    courierId: "bike-1",
+    createdOrder: 1,
+  }]);
+  assert.deepEqual(result.state.couriers.find((candidate) => candidate.id === "bike-1")?.packageIds, ["pkg-1"]);
+  assert.deepEqual(result.state.events.map((event) => event.type), ["package_created", "package_assigned"]);
+});
+
+test("dispatch-delivery failure leaves no partial package when no courier has capacity", () => {
+  const initial = createSimulation(map, [
+    { id: "bike-1", name: "Mina", locationId: "A", capacity: 1 },
+  ]);
+  const occupied = apply(initial, [
+    { type: "create-package", from: "A", to: "B", priority: "normal" },
+    { type: "assign-package", packageId: "pkg-1", courierId: "bike-1" },
+  ]);
+  const result = applyCommands(occupied, [{
+    type: "dispatch-delivery",
+    from: "A",
+    to: "C",
+    priority: "normal",
+  }]);
+  assert.equal(result.accepted, false);
+  assert.deepEqual(result.state, occupied);
+  assert.match(result.error, /capacity/i);
+});
+
+test("demo start uses the current map routes, labels its packages, and cannot run twice", () => {
+  const initial = createSimulation(map);
+  const result = startDemoDeliveries(initial);
+  assert.equal(result.accepted, true);
+  if (!result.accepted) return;
+  assert.deepEqual(result.demoPackageIds, ["pkg-1", "pkg-2"]);
+  assert.deepEqual(result.state.packages.map(({ from, to, source, status, pickedUp, courierId }) => ({ from, to, source, status, pickedUp, courierId })), [
+    { from: "A", to: "B", source: "demo", status: "assigned", pickedUp: false, courierId: "courier-1" },
+    { from: "A", to: "C", source: "demo", status: "assigned", pickedUp: false, courierId: "courier-2" },
+  ]);
+  assert.equal(result.state.events.some((event) => event.type === "package_picked_up" || event.type === "package_delivered"), false);
+  const repeated = startDemoDeliveries(result.state);
+  assert.equal(repeated.accepted, false);
+  assert.deepEqual(repeated.state, result.state);
+});
+
+test("demo start fails atomically when its map has fewer than two connected stops", () => {
+  const isolatedMap: PaperMap = {
+    locations: [{ id: "A", label: "Depot", kind: "depot", x: 0, y: 0 }, { id: "B", label: "Home", kind: "home", x: 20, y: 0 }],
+    roads: [],
+  };
+  const initial = createSimulation(isolatedMap);
+  const result = startDemoDeliveries(initial);
+  assert.equal(result.accepted, false);
+  assert.deepEqual(result.state, initial);
+  assert.match(result.error, /connected locations/i);
 });
 
 test("invalid command batches reject atomically without creating partial state", () => {

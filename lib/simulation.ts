@@ -158,6 +158,25 @@ export function shortestPath(map: PaperMap, from: string, to: string): Route | n
   return shortestPathUnchecked(parsedMap, from, to);
 }
 
+/** Pick a capacity-eligible courier whose current route can reach the pickup and destination. */
+export function selectAvailableCourierForDelivery(
+  map: PaperMap,
+  couriers: readonly Courier[],
+  from: string,
+  to: string,
+  courierId?: string,
+): string | undefined {
+  const parsedMap = paperMapSchema.parse(map);
+  if (from === to || !parsedMap.locations.some((location) => location.id === from) || !parsedMap.locations.some((location) => location.id === to)) return undefined;
+  const candidates = (courierId ? couriers.filter((courier) => courier.id === courierId) : [...couriers].sort((left, right) => left.id.localeCompare(right.id)));
+  return candidates.find((courier) => {
+    if (courier.packageIds.length >= courier.capacity) return false;
+    const effectiveLocation = courier.segment?.to ?? courier.locationId;
+    return shortestPathUnchecked(parsedMap, effectiveLocation, from) !== null &&
+      shortestPathUnchecked(parsedMap, from, to) !== null;
+  })?.id;
+}
+
 /** Create a fresh simulation with two deterministic couriers unless seeds are supplied. */
 export function createSimulation(map: PaperMap, seeds?: readonly CourierSeed[]): SimulationState {
   const parsedMap = paperMapSchema.parse(map);
@@ -489,6 +508,44 @@ function applyOneCommand(state: SimulationState, command: Command): string | nul
     return null;
   }
 
+  if (command.type === "dispatch-delivery") {
+    const locationIds = new Set(state.map.locations.map((location) => location.id));
+    if (!locationIds.has(command.from) || !locationIds.has(command.to)) return commandFailureMessage(command, "package endpoints must exist on the map");
+    if (command.from === command.to) return commandFailureMessage(command, "origin and destination must differ");
+    if (state.packages.length >= 256) return commandFailureMessage(command, "package limit reached");
+    const courierId = selectAvailableCourierForDelivery(state.map, state.couriers, command.from, command.to, command.courierId ?? undefined);
+    if (!courierId) {
+      return commandFailureMessage(command, command.courierId
+        ? "the selected courier must have capacity and a reachable pickup and delivery route"
+        : "no courier has capacity and a reachable pickup and delivery route");
+    }
+    const courier = getCourierById(state, courierId);
+    if (!courier) return commandFailureMessage(command, "the selected courier does not exist");
+
+    let id = `pkg-${state.nextPackageNumber}`;
+    while (state.packages.some((pkg) => pkg.id === id)) {
+      state.nextPackageNumber += 1;
+      id = `pkg-${state.nextPackageNumber}`;
+    }
+    const createdOrder = state.packages.reduce((max, pkg) => Math.max(max, pkg.createdOrder), 0) + 1;
+    state.packages.push({
+      id,
+      source: "user",
+      from: command.from,
+      to: command.to,
+      priority: command.priority,
+      status: "assigned",
+      pickedUp: false,
+      courierId: courier.id,
+      createdOrder,
+    });
+    state.nextPackageNumber += 1;
+    courier.packageIds.push(id);
+    appendEvent(state, "package_created", { packageId: id });
+    appendEvent(state, "package_assigned", { courierId: courier.id, packageId: id });
+    return null;
+  }
+
   const pkg = getPackageById(state, command.packageId);
   if (!pkg) return commandFailureMessage(command, `package ${command.packageId} does not exist`);
   if (pkg.status !== "queued" || pkg.courierId !== null) return commandFailureMessage(command, "only an unassigned queued package can be assigned");
@@ -518,6 +575,88 @@ export function applyCommands(state: SimulationState, commands: readonly Command
   const validated = simulationStateSchema.safeParse(next);
   if (!validated.success) return rejection(state, validated.error.issues[0]?.message ?? "Command batch could not be applied.");
   return { accepted: true, state: validated.data };
+}
+
+export type DemoStartResult =
+  | { accepted: true; state: SimulationState; demoPackageIds: string[] }
+  | { accepted: false; state: SimulationState; error: string };
+
+/** Start two real, code-routed demo deliveries on the current map, without marking either picked up. */
+export function startDemoDeliveries(state: SimulationState): DemoStartResult {
+  const parsedState = simulationStateSchema.safeParse(state);
+  if (!parsedState.success) return { accepted: false, state, error: parsedState.error.issues[0]?.message ?? "Simulation state is invalid." };
+  const current = parsedState.data;
+  if (current.packages.some((pkg) => pkg.source === "demo")) {
+    return { accepted: false, state, error: "Demo deliveries have already started for this simulation." };
+  }
+  if (current.packages.length > 254) return { accepted: false, state, error: "There is not enough package capacity to start two demo deliveries." };
+
+  const origin = current.map.locations.find((location) => location.kind === "depot")?.id ?? current.map.locations[0]?.id;
+  if (!origin) return { accepted: false, state, error: "The current map has no valid pickup location." };
+  const reachableDestinations = current.map.locations.filter((location) =>
+    location.id !== origin && shortestPathUnchecked(current.map, origin, location.id) !== null,
+  );
+  if (reachableDestinations.length === 0) {
+    return { accepted: false, state, error: "Add two connected locations to the map before starting demo deliveries." };
+  }
+
+  const homes = reachableDestinations.filter((location) => location.kind === "home");
+  const shops = reachableDestinations.filter((location) => location.kind === "shop");
+  const otherDestinations = reachableDestinations.filter((location) => location.kind !== "home" && location.kind !== "shop");
+  const orderedDestinations = [...homes, ...shops, ...otherDestinations];
+  const secondDestinationOrder = (firstId: string): string[] => {
+    const first = reachableDestinations.find((location) => location.id === firstId);
+    const preferred = first?.kind === "home"
+      ? [...shops, ...homes, ...otherDestinations]
+      : [...homes, ...shops, ...otherDestinations];
+    return [...preferred.filter((location) => location.id !== firstId).map((location) => location.id), firstId];
+  };
+
+  let selected: { firstDestination: string; secondDestination: string; firstCourier: string; secondCourier: string } | undefined;
+  const orderedCouriers = [...current.couriers].sort((left, right) => left.id.localeCompare(right.id));
+  for (const firstDestination of orderedDestinations) {
+    if (selected) break;
+    for (const secondDestination of secondDestinationOrder(firstDestination.id)) {
+      if (selected) break;
+      for (const firstCourier of orderedCouriers) {
+        const firstCourierId = selectAvailableCourierForDelivery(current.map, [firstCourier], origin, firstDestination.id);
+        if (!firstCourierId) continue;
+        const secondCourier = orderedCouriers.find((courier) =>
+          courier.id !== firstCourierId &&
+          selectAvailableCourierForDelivery(current.map, [courier], origin, secondDestination) === courier.id,
+        );
+        if (!secondCourier) continue;
+        selected = {
+          firstDestination: firstDestination.id,
+          secondDestination,
+          firstCourier: firstCourierId,
+          secondCourier: secondCourier.id,
+        };
+        break;
+      }
+    }
+  }
+  if (!selected) {
+    return { accepted: false, state, error: "Two couriers need available capacity and reachable routes to start demo deliveries." };
+  }
+
+  const applied = applyCommands(current, [
+    { type: "dispatch-delivery", from: origin, to: selected.firstDestination, priority: "normal", courierId: selected.firstCourier },
+    { type: "dispatch-delivery", from: origin, to: selected.secondDestination, priority: "normal", courierId: selected.secondCourier },
+  ]);
+  if (!applied.accepted) return { accepted: false, state, error: applied.error };
+
+  const previousIds = new Set(current.packages.map((pkg) => pkg.id));
+  const demoPackageIds: string[] = [];
+  const next = copyState(applied.state);
+  for (const pkg of next.packages) {
+    if (previousIds.has(pkg.id)) continue;
+    pkg.source = "demo";
+    demoPackageIds.push(pkg.id);
+  }
+  const validated = simulationStateSchema.safeParse(next);
+  if (!validated.success) return { accepted: false, state, error: validated.error.issues[0]?.message ?? "Demo deliveries could not be started." };
+  return { accepted: true, state: validated.data, demoPackageIds };
 }
 
 /** Return a courier's interpolated physical position on its current segment. */
