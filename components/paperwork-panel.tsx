@@ -23,6 +23,7 @@ type PaperworkPanelProps = {
   startsNewWorld: boolean;
   mapRevision: number;
   pinnedLocationIds: ReadonlySet<string>;
+  onScanStart: () => void;
   onApply: (map: PaperMap, startsFreshWorld: boolean) => string | null;
   onPauseSimulation: () => void;
   onFinishReview: () => void;
@@ -80,7 +81,7 @@ function formatBytes(bytes: number) {
   return bytes >= 1_000_000 ? `${(bytes / 1_000_000).toFixed(2)} MB` : `${Math.max(1, Math.round(bytes / 1_000))} KB`;
 }
 
-export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinnedLocationIds, onApply, onPauseSimulation, onFinishReview, onStartDemoDeliveries, demoStartAvailable }: PaperworkPanelProps) {
+export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinnedLocationIds, onScanStart, onApply, onPauseSimulation, onFinishReview, onStartDemoDeliveries, demoStartAvailable }: PaperworkPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const adjustDetailsRef = useRef<HTMLDetailsElement>(null);
@@ -314,6 +315,7 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
 
   async function analyzeImage() {
     if (!imageData || !file) return;
+    onScanStart();
     onPauseSimulation();
     const requestRevision = ++scanRevision.current;
     const runRevision = mapRevision;
@@ -676,7 +678,7 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
             </summary>
             <div className="proposal-list">
               {proposal.locations.map((location) => {
-                const pinned = !startsNewWorld && pinnedLocationIds.has(location.id);
+                const pinned = !(proposalOrigin === "scan" && startsNewWorld) && pinnedLocationIds.has(location.id);
                 const canRemove = !pinned && proposal.locations.length > 1;
                 return (
                 <div className="proposal-location-row" key={locationKeys.current.get(location.id) ?? location.id}>

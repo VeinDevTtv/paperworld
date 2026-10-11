@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DeliveryWorld } from "./delivery-world";
+import { DeliveryWorld, type RoadChangeKind } from "./delivery-world";
 import { PaperworkPanel } from "./paperwork-panel";
 import { OperationsWorkbench } from "./operations-workbench";
 import {
@@ -38,6 +38,41 @@ const sampleMap: PaperMap = {
     { id: "road-9", from: "shop-north", to: "shop-east", closed: false },
   ],
 };
+
+function getRoadChanges(previousMap: PaperMap, nextMap: PaperMap) {
+  const previousRoads = new Map(previousMap.roads.map((road) => [road.id, road]));
+  const previousLocations = new Map(previousMap.locations.map((location) => [location.id, location]));
+  const nextLocations = new Map(nextMap.locations.map((location) => [location.id, location]));
+  const changes = new Map<string, RoadChangeKind>();
+
+  for (const road of nextMap.roads) {
+    const previousRoad = previousRoads.get(road.id);
+    if (!previousRoad) {
+      changes.set(road.id, "new");
+      continue;
+    }
+
+    const sameConnection =
+      (previousRoad.from === road.from && previousRoad.to === road.to) ||
+      (previousRoad.from === road.to && previousRoad.to === road.from);
+    const previousFrom = previousLocations.get(previousRoad.from);
+    const previousTo = previousLocations.get(previousRoad.to);
+    const nextFrom = nextLocations.get(road.from);
+    const nextTo = nextLocations.get(road.to);
+    const sameGeometry = Boolean(
+      previousFrom && previousTo && nextFrom && nextTo && (
+        (previousFrom.x === nextFrom.x && previousFrom.y === nextFrom.y && previousTo.x === nextTo.x && previousTo.y === nextTo.y) ||
+        (previousFrom.x === nextTo.x && previousFrom.y === nextTo.y && previousTo.x === nextFrom.x && previousTo.y === nextFrom.y)
+      ),
+    );
+
+    if (!sameConnection || !sameGeometry || previousRoad.closed !== road.closed) {
+      changes.set(road.id, "changed");
+    }
+  }
+
+  return changes;
+}
 
 function createSampleSimulation() {
   const initial = createSimulation(sampleMap);
@@ -100,6 +135,7 @@ export function PaperworldWorkspace() {
   const [playbackSpeed, setPlaybackSpeed] = useState<0.25 | 1 | 4>(0.25);
   const [worldRevision, setWorldRevision] = useState(0);
   const [mapRevision, setMapRevision] = useState(0);
+  const [roadChanges, setRoadChanges] = useState<ReadonlyMap<string, RoadChangeKind>>(() => new Map());
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
   const resumeAfterPaperworkRef = useRef(false);
@@ -238,8 +274,10 @@ export function PaperworldWorkspace() {
   const visibleEvents = useMemo(() => [...simulation.events].reverse().slice(0, 8), [simulation.events]);
 
   function applyProposedMap(map: PaperMap, startsFreshWorld: boolean) {
+    const changes = getRoadChanges(simulationRef.current.map, map);
     if (startsFreshWorld) {
       updateSimulation(() => createSimulation(map));
+      setRoadChanges(changes);
       setScenario("scanned");
       setIsPlaying(false);
       setWorldRevision((revision) => revision + 1);
@@ -250,16 +288,23 @@ export function PaperworldWorkspace() {
     const result = applyMap(simulationRef.current, map);
     if (!result.accepted) return result.error;
     updateSimulation(() => result.state);
+    setRoadChanges(changes);
     setWorldRevision((revision) => revision + 1);
     setMapRevision((revision) => revision + 1);
     return null;
   }
 
   function applyCommandsToSimulation(commands: Parameters<typeof applyCommands>[1]) {
-    const result = applyCommands(simulationRef.current, commands);
+    const current = simulationRef.current;
+    const result = applyCommands(current, commands);
     if (!result.accepted) return result.error;
     updateSimulation(() => result.state);
     setWorldRevision((revision) => revision + 1);
+    if (commands.some((command) => command.type === "set-road")) {
+      const changes = getRoadChanges(current.map, result.state.map);
+      if (changes.size) setRoadChanges(changes);
+      setMapRevision((revision) => revision + 1);
+    }
     return null;
   }
 
@@ -277,6 +322,7 @@ export function PaperworldWorkspace() {
 
   function resetSimulation() {
     updateSimulation((current) => scenario === "sample" ? createSampleSimulation() : createSimulation(current.map));
+    setRoadChanges(new Map());
     setIsPlaying(false);
     setWorldRevision((revision) => revision + 1);
     setMapRevision((revision) => revision + 1);
@@ -294,6 +340,7 @@ export function PaperworldWorkspace() {
     });
     if (!result.accepted) return result.error;
     updateSimulation(() => result.state);
+    setRoadChanges(getRoadChanges(current.map, result.state.map));
     setWorldRevision((revision) => revision + 1);
     setMapRevision((revision) => revision + 1);
     return null;
@@ -364,6 +411,7 @@ export function PaperworldWorkspace() {
               locations={simulation.map.locations}
               roads={simulation.map.roads}
               couriers={courierMarkers}
+              roadChanges={roadChanges}
               onToggleRoad={toggleRoad}
             />
             <details className="run-controls">
@@ -387,6 +435,7 @@ export function PaperworldWorkspace() {
             startsNewWorld={scenario === "sample"}
             mapRevision={mapRevision}
             pinnedLocationIds={pinnedLocationIds}
+            onScanStart={() => setRoadChanges(new Map())}
             onApply={applyProposedMap}
             onPauseSimulation={pauseForPaperwork}
             onFinishReview={finishPaperworkReview}

@@ -425,6 +425,44 @@ p {
   stroke-dasharray: 3 5;
 }
 
+.road-centerline-new,
+.road-centerline-changed {
+  stroke-width: 2.8;
+  stroke-dasharray: 4 3;
+  animation: road-change-pulse 1.6s ease-in-out infinite;
+}
+
+.road-centerline-new { stroke: #3e8567; }
+.road-centerline-changed { stroke: #b77924; }
+.road-centerline-closed.road-centerline-new,
+.road-centerline-closed.road-centerline-changed {
+  stroke: #c66644;
+  stroke-dasharray: 3 5;
+}
+
+.road-change-badge rect {
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.road-change-badge-new rect {
+  fill: #e7f0e8;
+  stroke: #4f8268;
+}
+
+.road-change-badge-changed rect {
+  fill: #fff0d9;
+  stroke: #b77924;
+}
+
+.road-change-badge text {
+  fill: #35443c;
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 .active-route-line {
   fill: none;
   stroke: #e7a258;
@@ -872,6 +910,11 @@ p {
     opacity: 0;
     transform: scale(1.45);
   }
+}
+
+@keyframes road-change-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
 }
 
 @media (max-width: 960px) {

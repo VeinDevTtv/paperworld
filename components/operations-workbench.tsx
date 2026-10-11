@@ -462,10 +462,11 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
   return (
     <section className="workbench-section" aria-label="Dispatch and diagnostics">
       <div className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
-        {manualError ?? commandError ?? voiceError ?? manualNotice ?? proposalNotice ?? ""}
+        {manualError ?? commandError ?? manualNotice ?? proposalNotice ?? ""}
       </div>
       {manualError ? <p className="workspace-status workspace-status-error" role="alert">{manualError}</p> : null}
       {commandError ? <p className="workspace-status workspace-status-error" role="alert">{commandError}</p> : null}
+      {voiceError ? <p className="workspace-status workspace-status-error" role="alert">{voiceError}</p> : null}
       {proposalNotice ? <p className={`workspace-status ${proposalNotice.startsWith("Nothing") ? "workspace-status-error" : "workspace-status-success"}`} role="status">{proposalNotice}</p> : null}
       {manualNotice ? <p className="workspace-status workspace-status-success" role="status">{manualNotice}</p> : null}
 

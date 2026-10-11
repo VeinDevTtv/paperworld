@@ -19,6 +19,8 @@ export type WorldRoad = {
   closed: boolean;
 };
 
+export type RoadChangeKind = "new" | "changed";
+
 export type CourierMarker = {
   id: string;
   label: string;
@@ -46,6 +48,7 @@ type DeliveryWorldProps = {
   locations: WorldLocation[];
   roads: WorldRoad[];
   couriers?: CourierMarker[];
+  roadChanges?: ReadonlyMap<string, RoadChangeKind>;
   onToggleRoad: (roadId: string) => string | null;
 };
 
@@ -68,10 +71,15 @@ function pathForRoad(from: WorldLocation, to: WorldLocation) {
   const start = toPoint(from.x, from.y);
   const end = toPoint(to.x, to.y);
   const middle = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const length = Math.hypot(dx, dy) || 1;
+  const badge = { x: middle.x - (dy / length) * 22, y: middle.y + (dx / length) * 22 };
 
   return {
     d: `M ${start.x} ${start.y} L ${end.x} ${end.y}`,
     middle,
+    badge,
   };
 }
 
@@ -113,7 +121,7 @@ function LocationGlyph({ kind }: { kind: LocationKind }) {
   return <circle r="3" className="junction-core" />;
 }
 
-export function DeliveryWorld({ locations, roads, couriers = [], onToggleRoad }: DeliveryWorldProps) {
+export function DeliveryWorld({ locations, roads, couriers = [], roadChanges = new Map(), onToggleRoad }: DeliveryWorldProps) {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [roadError, setRoadError] = useState<string | null>(null);
   const locationById = new Map(locations.map((location) => [location.id, location]));
@@ -198,6 +206,8 @@ export function DeliveryWorld({ locations, roads, couriers = [], onToggleRoad }:
               if (!from || !to) return null;
 
               const geometry = pathForRoad(from, to);
+              const roadChange = roadChanges.get(road.id);
+              const roadChangeLabel = roadChange === "new" ? "NEW" : roadChange === "changed" ? "CHANGED" : null;
               const isSelected = selection?.kind === "road" && selection.id === road.id;
               const routeCouriers = couriers.filter((courier) => courier.routeRoadIds?.includes(road.id));
               const selectedRoute = selectedCourier?.routeRoadIds?.includes(road.id) ?? false;
@@ -217,16 +227,16 @@ export function DeliveryWorld({ locations, roads, couriers = [], onToggleRoad }:
                   role="button"
                   tabIndex={0}
                   aria-pressed={isSelected}
-                  aria-label={`${road.closed ? "Closed" : "Open"} road between ${from.label} and ${to.label}`}
+                  aria-label={`${roadChangeLabel ? `${roadChangeLabel} · ` : ""}${road.closed ? "Closed" : "Open"} road between ${from.label} and ${to.label}`}
                   onClick={action}
                   onKeyDown={(event) => activateOnKeyboard(event, action)}
                 >
-                  <title>{`${from.label} to ${to.label}${road.closed ? " · closed" : ""}`}</title>
+                  <title>{`${roadChangeLabel ? `${roadChangeLabel} · ` : ""}${from.label} to ${to.label}${road.closed ? " · closed" : ""}`}</title>
                   <path d={geometry.d} className="road-casing" />
                   <path d={geometry.d} className={roadClass} />
                   <path
                     d={geometry.d}
-                    className={`road-centerline ${road.closed ? "road-centerline-closed" : ""}`}
+                    className={`road-centerline ${road.closed ? "road-centerline-closed" : ""} ${roadChange ? `road-centerline-${roadChange}` : ""}`}
                   />
                   {routeCouriers.length ? (
                     <path
@@ -239,6 +249,12 @@ export function DeliveryWorld({ locations, roads, couriers = [], onToggleRoad }:
                     <g transform={`translate(${geometry.middle.x} ${geometry.middle.y})`} className="closure-marker" aria-hidden="true">
                       <circle r="13" />
                       <path d="m-4-4 8 8m0-8-8 8" />
+                    </g>
+                  ) : null}
+                  {roadChangeLabel ? (
+                    <g transform={`translate(${geometry.badge.x} ${geometry.badge.y})`} className={`road-change-badge road-change-badge-${roadChange}`} aria-hidden="true" pointerEvents="none">
+                      <rect x={roadChange === "changed" ? -26 : -18} y="-9" width={roadChange === "changed" ? 52 : 36} height="18" rx="9" />
+                      <text textAnchor="middle" dominantBaseline="central">{roadChangeLabel}</text>
                     </g>
                   ) : null}
                 </g>
@@ -309,7 +325,9 @@ export function DeliveryWorld({ locations, roads, couriers = [], onToggleRoad }:
               const isSelected = selection?.kind === "courier" && selection.id === courier.id;
               const action = () => setSelection({ kind: "courier", id: courier.id });
               const courierAriaLabel = courier.activePackage
-                ? `Courier ${courier.label}, carrying ${courier.activePackage.id} to ${courier.activePackage.toLabel}`
+                ? courier.activePackage.pickedUp
+                  ? `Courier ${courier.label}, carrying ${courier.activePackage.id} to ${courier.activePackage.toLabel}`
+                  : `Courier ${courier.label}, heading to pick up ${courier.activePackage.id} at ${courier.activePackage.fromLabel}`
                 : `Courier ${courier.label}, ${courier.waitingReason ?? "waiting"}`;
 
               return (
