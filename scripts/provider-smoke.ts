@@ -148,6 +148,7 @@ async function createCodexAuthEnvironment(): Promise<NodeJS.ProcessEnv> {
   ];
   const safe: NodeJS.ProcessEnv = {};
   for (const name of safeNames) if (inherited[name]) safe[name] = inherited[name];
+  safe.NODE_ENV = "production";
   // The CLI uses its saved ChatGPT login. Never pass API credentials into this child.
   for (const name of ["OPENAI_API_KEY", "TYPESAFE_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN"]) {
     delete safe[name];
