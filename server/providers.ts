@@ -43,7 +43,7 @@ const typeSafeResponseSchema = z.object({
   answers: z.record(z.string(), z.object({
     type: z.literal("choice"),
     choice: z.string().max(80),
-    probabilities: z.record(z.string(), z.number().min(0).max(1)).optional(),
+    probabilities: z.record(z.string(), z.number().min(0).max(1)),
     confidence: z.number().min(0).max(1),
   })),
   usage: z.object({
@@ -51,6 +51,12 @@ const typeSafeResponseSchema = z.object({
     output_tokens: z.number().int().nonnegative(),
   }).optional(),
 });
+
+const typeSafeChoiceLabels = {
+  operation: ["create_package", "set_priority", "set_road", "assign_package", "clarify"],
+  priority: ["normal", "urgent", "unspecified"],
+  road_state: ["open", "closed", "unspecified"],
+} as const;
 
 type ImageMime = keyof typeof IMAGE_LIMITS;
 type ProviderName = "codex" | "typesafe" | "openai";
@@ -284,7 +290,7 @@ function unusedId(prefix: string, used: Set<string>): string {
   return `${prefix}${index}`;
 }
 
-function reconcileMap(candidate: PaperMap, previous?: PaperMap): { map: PaperMap; reviewReasons: string[] } {
+export function reconcileMap(candidate: PaperMap, previous?: PaperMap): { map: PaperMap; reviewReasons: string[] } {
   const reviewReasons: string[] = [];
   const oldLocations = previous?.locations ?? [];
   const oldRoads = previous?.roads ?? [];
@@ -296,8 +302,21 @@ function reconcileMap(candidate: PaperMap, previous?: PaperMap): { map: PaperMap
   const locations = candidate.locations.map((location) => {
     const byId = oldLocations.filter((old) => old.id === location.id && old.kind === location.kind && !matchedOldLocations.has(old.id));
     const byName = oldLocations.filter((old) => normalizedLabel(old.label) === normalizedLabel(location.label) && old.kind === location.kind && !matchedOldLocations.has(old.id));
-    const match = byId.length === 1 ? byId[0] : byId.length > 1 ? undefined : byName.length === 1 ? byName[0] : undefined;
-    if ((byId.length > 1 || (!byId.length && byName.length > 1)) && previous) reviewReasons.push("ambiguous_location_identity");
+    let match: PaperMap["locations"][number] | undefined;
+    if (byName.length === 1) {
+      // A unique visible label is stronger evidence than a model-reused ID.
+      match = byName[0];
+    } else if (byName.length > 1) {
+      const idMatch = byId.length === 1 && byName.some((old) => old.id === byId[0].id) ? byId[0] : undefined;
+      if (idMatch) match = idMatch;
+      else if (previous) reviewReasons.push("ambiguous_location_identity");
+    } else if (byId.length === 1) {
+      if (normalizedLabel(byId[0].label) === normalizedLabel(location.label)) match = byId[0];
+      else if (previous) reviewReasons.push("location_identity_conflict");
+    } else if (byId.length > 1 && previous) {
+      reviewReasons.push("ambiguous_location_identity");
+    }
+    if (match && match.id !== location.id) reviewReasons.push("location_id_reconciled_by_label");
     let id = match?.id ?? location.id;
     if (!match && reservedLocationIds.has(id)) {
       id = unusedId("location-", new Set([...reservedLocationIds, ...usedLocationIds]));
@@ -433,6 +452,15 @@ async function callTypeSafeDecision(text: string, context: z.infer<typeof comman
   for (const key of ["operation", "priority", "road_state"]) {
     const answer = body.data.answers[key];
     if (!answer) throw new ApiError(502, "typesafe_invalid_response");
+    const allowedChoices = typeSafeChoiceLabels[key as keyof typeof typeSafeChoiceLabels];
+    const probabilityKeys = Object.keys(answer.probabilities);
+    const probabilityTotal = Object.values(answer.probabilities).reduce((sum, value) => sum + value, 0);
+    if (
+      !allowedChoices.includes(answer.choice as never) ||
+      probabilityKeys.length !== allowedChoices.length ||
+      allowedChoices.some((choice) => !Object.prototype.hasOwnProperty.call(answer.probabilities, choice)) ||
+      Math.abs(probabilityTotal - 1) > 0.02
+    ) throw new ApiError(502, "typesafe_invalid_response");
     choices[key] = answer.choice;
     confidence = Math.min(confidence, answer.confidence);
   }
