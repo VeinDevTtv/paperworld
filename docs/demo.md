@@ -34,7 +34,7 @@ Manual dispatch, provider diagnostics, history, and detailed map editing are ava
 
 Large supported photos are compressed locally before scanning; check that labels are upright/readable in the preview. For reproducible rotated-photo tests run `npx tsx scripts/photo-fixtures.ts` and upload the JPEGs from `.local/photo-fixtures` in initial/blocked/recovered order. These are synthetic images. A new-home variant adds N connected to Shop; review all road changes. For physical camera repositioning, move the camera while preserving stop IDs, rescan, and verify existing package IDs/positions/progress remain unchanged. Report failures rather than correcting the evidence after the fact.
 
-Generated PNG rehearsal tests real image inference, reviewed map updates, deterministic movement, command validation, and the recovery loop. It does not establish arbitrary handwriting recognition or physical camera/microphone operation. Those require a device rehearsal with your own drawing. See [verification](polish-verification.md) for the performed checks and remaining limits.
+Generated PNG rehearsal tests real image inference, reviewed map updates, deterministic movement, command validation, and the recovery loop. It does not establish arbitrary handwriting recognition or physical camera operation. User separately reported a handwritten recovery loop and supplied physical dictation/dispatch/completion screenshots. Browser/device coverage still needs rehearsal. See [current verification](release-verification.md) for performed checks and remaining limits.
 
 ## Backup clip
 

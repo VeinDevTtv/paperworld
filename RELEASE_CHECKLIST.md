@@ -14,8 +14,8 @@ Current baseline: `bfdc341`. This checklist tracks the new release; previous evi
 | Physical microphone | PASS: USER PHYSICAL | User reported Dictate worked; screenshots show dictated Depot to North shop proposal then pkg-4 Delivery complete, Delivered1 Waiting0; successful browser appears Chrome, version/device unreported |
 | Optional paid API adapter | NOT RUN | No billing authorization; disabled |
 | Current official cost assumptions | PASS | Official pricing checked2026-10-11; illustrative$0.0854/session,$0.1068 with25% retry; not measured subscription billing; docs/submission.md |
-| All tests / typecheck / production build | PASS: INTEGRATED | 48 tests, typecheck, production build passed on integrated2059048; latest documentation correction does not change runtime |
-| Source and built-browser secret checks | PASS: INTEGRATED | Source + built assets63 files scanned after final build; no secrets found |
+| All tests / typecheck / production build | PASS: INTEGRATED | 49 tests, typecheck, production build passed on photo candidatea155e61; integrated merge gate follows |
+| Source and built-browser secret checks | PASS: INTEGRATED | Source + built assets64 files scanned after final build; no secrets found |
 | Desktop / mobile screenshots and browser loop | PARTIAL | Production live synthetic scan/closure/same urgent pkg-1 recovery completed; text and mocked voice/live inference delivered; desktop/mobile DOM checks; user desktop screenshots inspected; 66s fixed-viewport backup recovered, labeled synthetic/live; some frames soft; mobile screenshot capture still fails |
 | Final independent review / commit | APPROVED | Separate reviewer approved code/schema/benchmark/cost and spoken parser; root sole integrator; final gates recorded below |
 | Rehearsal / submission reserve | SET | User deadline8pm Pacific2026-10-11; reserve6:30-8pm local. User said PST; following local Pacific clock unless organizer specifies fixed UTC-8 |
