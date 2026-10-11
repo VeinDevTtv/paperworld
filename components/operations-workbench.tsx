@@ -404,7 +404,7 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
     const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
     if (!Recognition) {
       setVoiceSupported(false);
-      setVoiceError("Speech recognition is not available in this browser.");
+      setVoiceError("Speech recognition is not available in this browser. Try this localhost page in Google Chrome, or focus the command field and use Windows Win+H, then review.");
       return;
     }
 
@@ -426,10 +426,10 @@ export function OperationsWorkbench({ simulation, worldRevision, onApplyCommands
       if (recognitionRef.current !== recognition) return;
       setVoiceState("Error");
       setVoiceError(event.error === "network"
-        ? "Dictation could not reach the browser speech service. Your transcript is kept. Check your connection, retry dictation, or type the instruction."
+        ? "Dictation could not reach the browser speech service. Any captured text is kept. Try this localhost page in Google Chrome, or focus the command field and use Windows Win+H, then review."
         : event.error === "not-allowed"
           ? "Microphone permission was denied. Allow microphone access in browser settings, then retry, or type the instruction."
-          : `Speech recognition stopped (${event.error}). Your transcript is kept; retry or type the instruction.`);
+          : `Speech recognition stopped (${event.error}). Any captured text is kept; retry or type the instruction.`);
       setIsListening(false);
       recognitionRef.current = null;
     };

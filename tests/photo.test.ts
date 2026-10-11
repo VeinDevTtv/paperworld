@@ -36,4 +36,3 @@ test("large photo uses EXIF-aware decode, bounded geometry and a scan-sized JPEG
     globalThis.document = originalDocument;
   }
 });
-

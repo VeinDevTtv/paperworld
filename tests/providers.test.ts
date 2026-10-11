@@ -274,6 +274,37 @@ test("automatic dispatch clarifies when a named courier is ambiguous", async () 
   });
 });
 
+test("spoken dispatch without from preserves directional roles and rejects missing or duplicate stops", async () => {
+  const spokenMap = paperMapSchema.parse({
+    locations: [
+      { id: "D", label: "Depot", kind: "depot", x: 10, y: 50 },
+      { id: "N", label: "North Shop", kind: "shop", x: 80, y: 20 },
+      { id: "E", label: "East Shop", kind: "shop", x: 80, y: 80 },
+    ],
+    roads: [{ id: "D-N", from: "D", to: "N", closed: false }, { id: "D-E", from: "D", to: "E", closed: false }],
+  });
+  await withMockedTypeSafe(typeSafeDecision("dispatch_delivery", "urgent"), async () => {
+    for (const [text, from, to] of [
+      ["send an urgent delivery Depot to North Shop", "D", "N"],
+      ["send an urgent parcel North Shop to Depot", "N", "D"],
+      ["send an urgent delivery from Depot to East Shop", "D", "E"],
+    ]) {
+      const proposal = await proposeCommand({ text, map: spokenMap, packages: [], couriers: [{ ...courier, locationId: "D" }] });
+      assert.equal(proposal.clarification, null, text);
+      assert.deepEqual(proposal.commands, [{ type: "dispatch-delivery", from, to, priority: "urgent", courierId: courier.id }]);
+    }
+    for (const text of ["send an urgent delivery to North Shop", "send an urgent delivery Depot", "send an urgent delivery Depot North Shop", "send an urgent delivery Depot to Atlantis", "send an urgent delivery Depot to Depot"]) {
+      const proposal = await proposeCommand({ text, map: spokenMap, packages: [], couriers: [{ ...courier, locationId: "D" }] });
+      assert.deepEqual(proposal.commands, [], text);
+      assert.match(proposal.clarification ?? "", /from \[origin\] to \[destination\]/, text);
+    }
+    const duplicateMap = { ...spokenMap, locations: spokenMap.locations.map((location) => location.id === "E" ? { ...location, label: "North Shop" } : location) };
+    const proposal = await proposeCommand({ text: "send an urgent delivery Depot to North Shop", map: duplicateMap, packages: [], couriers: [{ ...courier, locationId: "D" }] });
+    assert.deepEqual(proposal.commands, []);
+    assert.ok(proposal.clarification);
+  });
+});
+
 test("automatic create-delivery wording preserves the explicitly named courier", async () => {
   await withMockedTypeSafe(typeSafeDecision("dispatch_delivery", "urgent"), async () => {
     const proposal = await proposeCommand({

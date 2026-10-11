@@ -488,6 +488,15 @@ function explicitEntityPairs(text: string): EntityMentionPair[] {
   return pairs;
 }
 
+function deliveryEntityPairs(text: string): EntityMentionPair[] {
+  const explicit = explicitEntityPairs(text);
+  if (explicit.length > 0) return explicit;
+  // Speech can omit "from", but the delivery noun and "to" still pin roles.
+  // Never infer direction from two names merely appearing somewhere in a request.
+  const pattern = /\b(?:delivery|parcel|package)\s+(?!from\b)(.+?)\s+to\s+(.+?)(?=\s+(?:(?:and|then)\s+)?(?:create|dispatch|send|deliver|set|assign|open|close|reopen|change|update)\b|\s+(?:with|as|priority|urgent|normal|standard|please|now)\b|[,.!?;]|$)/giu;
+  return [...text.matchAll(pattern)].map((match) => ({ left: match[1].trim(), right: match[2].trim() }));
+}
+
 function explicitRoadEntityPairs(text: string): EntityMentionPair[] {
   const patterns = [
     /\broad\s+between\s+(.+?)\s+and\s+(.+?)(?=\s+(?:(?:and|then)\s+)?(?:create|set|assign|open|close|reopen|change|update)\b|\s+(?:please|now)\b|[,.!?;]|$)/giu,
@@ -704,14 +713,14 @@ async function proposeWithJev(
       break;
     }
     case "dispatch_delivery": {
-      const pairs = explicitEntityPairs(context.text).map(({ left, right }) => ({
+      const pairs = deliveryEntityPairs(context.text).map(({ left, right }) => ({
         from: exactMentions(left, mapEntries),
         to: exactMentions(right, mapEntries),
       }));
       const pair = pairs.length === 1 ? pairs[0] : undefined;
       const from = pair?.from.length === 1 ? pair.from[0] : undefined;
       const to = pair?.to.length === 1 ? pair.to[0] : undefined;
-      if (!from || !to || from === to) return clarification("Which two different locations should this delivery travel between?", "typesafe", result.model, result.latencyMs);
+      if (!from || !to || from === to) return clarification('Which two different stops should this delivery use? Say "Send a delivery from [origin] to [destination]" with the stop names.', "typesafe", result.model, result.latencyMs);
       commands = [{
         type: "dispatch-delivery",
         from,

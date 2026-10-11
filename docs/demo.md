@@ -22,7 +22,7 @@ Draw a new S–H road while leaving J–H closed. Upload, choose **Read paper ma
 
 ## Voice/text instruction
 
-Dictation shows starting → listening → processing → stopped, or an error. Speak only when Listening appears. Network failure may come from your browser's speech service: keep/edit the transcript, choose Retry dictation, or type it. Microphone denial requires allowing access in browser site settings. Voice never applies actions automatically. If Jev command review fails, Retry uses the current world; Use Codex explicitly requests the subscription provider and still requires confirmation.
+Dictation shows starting → listening → processing → stopped, or an error. Speak only when Listening appears. Network failure may come from your browser's speech service. A physical Brave test repeatedly failed; try the localhost page in Google Chrome, allow microphone access, then retest. On Windows you can focus the command field and use Win+H; this is OS dictation, not a passed Paperworld Web Speech test. Any captured text stays editable; Retry dictation or type it. Microphone denial requires allowing access in browser site settings. Voice never applies actions automatically. If Jev command review fails, Retry uses the current world; Use Codex explicitly requests the subscription provider and still requires confirmation.
 
 Enter **Send an urgent delivery from Depot to Shop**, using the actual visible stop names. One reviewed request creates and dispatches a delivery; code allocates its package ID and checks courier capacity. A compound instruction uses Codex; a supported narrow operation uses Jev. No difficulty guess controls routing.
 
