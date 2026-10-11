@@ -45,3 +45,9 @@ Final spoken-parser production probe: typed omitted-from request `send an urgent
 On2059048, independently repeated initial scan7364 ms, closure6590 ms, added-connection scan6761 ms with live Codex and synthetic PNGs. Both confirmations preserved exact courier positions. pkg-1 waited, route restored at0:04, then the same pkg-1 delivered once at0:14; pkg-2 delivered0:07. Final Delivered2 Waiting0. Raw [final-recovery.json](evidence/final-recovery.json). Preview evaluate timed out during confirmation/steps but subsequent inspection verified completion; no result inferred from the timeout.
 
 User separately reported the handwritten closure/recovery loop works correctly. This is user-reported physical evidence, not agent-operated hardware. Webcam/new-home/reposition and novice feedback were not separately supplied. Deadline supplied8pm Pacific; reserve6:30-8pm for rehearsal/submission. Final integrated2059048 passed48 tests, typecheck, production build and source/built-browser secret scan63 files.
+
+## Scan transport resilience follow-up
+
+Audit identified a browser connection hang beyond the existing provider timeout. Scan now races fetch and response JSON against90 seconds, clears timers on reset/new photo/unmount, retains the world, exposes Read paper map retry, and prevents duplicate requests. Separate reviewer approved. Browser mocked test accelerates90 seconds to30 ms: double click1 request, timeout visible, retry enabled, seven-stop world unchanged, no confirmation; late successful mocked response ignored even when fetch ignores abort. This is accelerated transport evidence, not a real90-second provider wait.
+
+Fresh native preview tab captured a soft1280x800 desktop screenshot and was visually inspected. Mobile capture still fails after resize; no mobile screenshot approval. New recording start timed out and stop failed; no approved backup resulted.
