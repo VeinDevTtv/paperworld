@@ -75,6 +75,42 @@ test("tick is deterministic and both couriers advance concurrently without telep
   assert.equal(first.packages.every((pkg) => pkg.status === "in_transit"), true);
 });
 
+test("a courier cannot pick up a package at its stale segment origin while moving", () => {
+  const lineMap: PaperMap = {
+    locations: [
+      { id: "A", label: "Depot", kind: "depot", x: 0, y: 0 },
+      { id: "B", label: "Home", kind: "home", x: 20, y: 0 },
+    ],
+    roads: [{ id: "A-B", from: "A", to: "B", closed: false }],
+  };
+  let state = createSimulation(lineMap, [{ id: "bike-1", name: "Mina", locationId: "A", capacity: 2 }]);
+  state = apply(state, [
+    { type: "create-package", from: "A", to: "B", priority: "normal" },
+    { type: "assign-package", packageId: "pkg-1", courierId: "bike-1" },
+  ]);
+  state = tick(state, 0.5);
+  assert.deepEqual(getCourierPosition(state, "bike-1"), { x: 5, y: 0 });
+
+  state = apply(state, [
+    { type: "create-package", from: "A", to: "B", priority: "normal" },
+    { type: "assign-package", packageId: "pkg-2", courierId: "bike-1" },
+  ]);
+  state = tick(state, 0);
+  assert.equal(state.packages[1]?.pickedUp, false);
+  assert.equal(state.packages[1]?.status, "assigned");
+  state = tick(state, 0.1);
+  assert.deepEqual(getCourierPosition(state, "bike-1"), { x: 6, y: 0 });
+  assert.equal(state.packages[1]?.pickedUp, false);
+
+  state = tick(state, 1.4);
+  assert.equal(state.packages[0]?.status, "delivered");
+  assert.equal(state.packages[1]?.pickedUp, false);
+  state = tick(state, 2);
+  assert.equal(state.couriers[0]?.locationId, "A");
+  assert.equal(state.packages[1]?.pickedUp, true);
+  assert.equal(state.packages[1]?.status, "in_transit");
+});
+
 test("closing and removing a road mid-segment preserves its geometry, then reroutes at the endpoint", () => {
   const detourMap: PaperMap = {
     locations: [

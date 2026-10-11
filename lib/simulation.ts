@@ -239,6 +239,10 @@ function refreshPackageStatuses(state: SimulationState): void {
 }
 
 function processArrivals(state: SimulationState, courier: Courier): boolean {
+  // locationId remains the segment's origin while the courier is moving. Only a
+  // courier physically at a node can pick up or deliver a package there.
+  if (courier.segment !== null) return false;
+
   let changed = false;
 
   for (const packageId of [...courier.packageIds]) {
