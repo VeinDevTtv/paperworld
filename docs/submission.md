@@ -12,6 +12,8 @@ The client renderer uses pinned Three.js 0.186.1 and React Three Fiber 9.8.1 wit
 
 Camera and browser speech recognition are device/browser services. Speech may use a browser vendor network service. The app binds only to localhost, but inference is online. No database, accounts, public deployment, or extra infrastructure.
 
+Optional Compare road change clones the latest road-only pre-edit state and runs two isolated branches for the same20 simulation seconds. It shows actual endpoint delivery/blocked counts and distance traveled in map units. Preview toggles do not mutate the live run or call a model. This is a simulation comparison, not a real-world prediction; it excludes added/moved stops.
+
 ## Results and limits
 
 Use RELEASE_CHECKLIST.md for this release's exact evidence. docs/polish-verification.md contains prior live Codex/Jev runs on generated drawings and clearly labeled replays. New paired benchmark JSON files retain every attempt, including provider failures. Generated drawings do not prove handwriting recognition; mocked speech does not prove physical transcription. User reports all eight physical Chrome steps passed on the stable2D release: handwritten webcam capture, reposition/rescan continuity, closure/wait, reconnection/same package completion, new home, and dictated delivery. Earlier screenshots corroborate physical dictation/dispatch/completion; Brave speech-service network failure remains recorded. Actual novice feedback remains unreported. Mobile390px browser-emulation images were independently visually reviewed; this is not physical phone evidence. Current3D production results and limitations are in docs/interactive-3d-verification.md.

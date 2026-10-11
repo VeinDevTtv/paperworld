@@ -1,6 +1,6 @@
 # Interactive 3D release evidence
 
-Core checkpoint `c0236b3`; final integrated main-commit gates remain pending. Prior 2D evidence is not automatically a 3D pass. Separate code and saved-pixel reviews approved the core; production acceptance repeated on the frozen build.
+Core checkpoint `c0236b3`, integrated main `6884c9d`; comparison integrated runtime `030cdd8`. Prior 2D evidence is not automatically a 3D pass. Separate code and saved-pixel reviews approved the core and comparison; production acceptance repeated on the merged build.
 
 ## Performed
 
@@ -40,4 +40,18 @@ After a road-only accepted edit, Compare road change retains one cloned pre-edit
 
 Four regression tests cover deterministic branch outcomes, deep isolation, occupied-segment continuity and invalid/unchanged edits. Replayed scan responses from the earlier live synthetic run produced an actual interactive comparison: without S–H,1 delivered/1 blocked/24.2 distance; with S–H,2 delivered/0 blocked/129.0 distance. Branch toggles and Return to live preserved the exact live state and made zero inference calls. Editing is disabled in preview; Step exited preview and advanced only the live run by1 second. Raw evidence: `evidence/road-comparison-browser.json`. These outcomes are one fixture, not a general improvement claim.
 
-Desktop and fixed390px native recording frames were inspected (`evidence/comparison-desktop.png`, `evidence/comparison-mobile.png`). Mobile table width325.6px, document width375px in390px viewport; no horizontal overflow. Recording compression softens text. Separate reviewer approved code and desktop pixels; final integrated production gates remain pending.
+Desktop and fixed390px native recording frames were inspected (`evidence/comparison-desktop.png`, `evidence/comparison-mobile.png`). Mobile table width325.6px, document width375px in390px viewport; no horizontal overflow. Recording compression softens text. Separate reviewer approved code, documentation and both desktop/mobile shown pixels.
+
+## Final integrated runtime030cdd8
+
+56 tests, typecheck, production build and source/built-browser secret scan92 files passed on main. Production restarted only on127.0.0.1:3000; Codex/Jev readiness verified with the same-origin provider endpoint, paid adapter disabled.
+
+Final browser repetition used actual uploads of synthetic paper with explicitly replayed earlier scan responses, and real command requests. Duplicate Start produced exactly two packages. Both complete courier objects stayed exact through closure/reconnection; pkg-1 waited at J and completed once. Comparison preserved exact live state and made zero inference calls. Mocked speech retained an editable transcript without inference until Review; live Jev181ms dispatched pkg-3 and it completed once. Ordered open-road→dispatch used Jev103ms→Codex8034ms total; duplicate confirmation created only pkg-4, which completed once. 2D/3D switches preserved exact serialized state. Raw evidence: `evidence/interactive-3d-final-main.json`.
+
+Mocked HTTP503 preserved the run, offered Retry/Use Codex, and explicit Use Codex made a live4743ms subscription request. Reviewed pkg-5 completed once. `evidence/interactive-3d-final-recovery.json`. Existing stale-response, reset, permission/timeout and context-loss evidence remains applicable to unchanged paths; comparison Reset/Resume/Step tests are in `road-comparison-controls.json`. Final desktop/mobile recorded frames (`3d-final-desktop.png`, `3d-final-mobile.png`) show actual meshes and paper preview; mobile document375px/viewport390px had no horizontal overflow. Saved pixels are soft and are not physical mobile evidence.
+
+One production preview tab timed out after Confirm; app/provider endpoints remained responsive. A fresh native preview tab with a single active recording completed the entire final loop. That interrupted attempt is not counted as a passed run. Backup full core loop remains the labeled174s live-synthetic recording described above; final comparison repetition is replay-labeled evidence.
+
+Independent reviewer approved final raw evidence and shown desktop/mobile pixels. Final screenshots retain the duplicate-start guard notice from the regression check; the command bar is partly below the desktop image edge in that error state. They are verification images, not a clean rehearsal view. Reset clears the notice before rehearsal. The previously approved compact default layout and labeled full-loop backup are separate artifacts.
+
+New-home production check: generated raster with live Codex7086ms added a fifth home and retained both courier objects exactly. Live Jev100ms created urgent pkg-6 to NEW HOME N; it completed once. Adding a stop cleared the road-only comparison. The first fixture accidentally renamed existing labels and produced identity warnings in7401ms; it was not applied. That attempt is retained alongside the stable-label success in `evidence/interactive-3d-new-home.json`. This is synthetic input, not another physical webcam claim.

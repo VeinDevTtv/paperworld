@@ -2,6 +2,8 @@
 
 The interactive 3D amendment is tracked separately in [interactive-3d-verification.md](interactive-3d-verification.md). Physical user evidence now includes all eight Chrome camera/reposition/closure/reconnection/new-home/dictation steps; the user reports they passed on the stable 2D release. No actual novice observation has been reported. Earlier test counts and SVG transforms below belong to their recorded commits.
 
+Current integrated runtime `030cdd8` adds actual Three.js/R3F diorama and isolated road comparison. Main passed56 tests/typecheck/build/source+built secrets and production recovery/voice/text dispatch repetition. Follow the linked3D report for current evidence labels, screenshots and host limitations; earlier49-test results below are historical.
+
 This extends the previous integrated baseline bfdc341. Root integrates; compound agent owns server/providers.ts/tests/providers.test.ts; input agent owns input components/photo helper/test/generator; separate read-only reviewer approves logic, input lifecycle and benchmark. No paid API adapter calls, new infrastructure or public deployment.
 
 ## Live browser run (development build, native Ravylo preview)

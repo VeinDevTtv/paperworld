@@ -1,0 +1,1005 @@
+{
+  "accepted": {
+    "couriers": [
+      {
+        "capacity": 2,
+        "id": "courier-1",
+        "locationId": "shop",
+        "name": "Mina",
+        "packageIds": [],
+        "segment": null
+      },
+      {
+        "capacity": 2,
+        "id": "courier-2",
+        "locationId": "shop",
+        "name": "Rook",
+        "packageIds": [],
+        "segment": null
+      }
+    ],
+    "distanceTraveled": 728.6457965370917,
+    "elapsedSeconds": 119.1625,
+    "events": [
+      {
+        "atSeconds": 0,
+        "id": "event-1",
+        "packageId": "pkg-1",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-2",
+        "packageId": "pkg-1",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "id": "event-3",
+        "packageId": "pkg-2",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-4",
+        "packageId": "pkg-2",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-5",
+        "packageId": "pkg-1",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-6",
+        "packageId": "pkg-2",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 1.1624999999999979,
+        "id": "event-7",
+        "type": "map_updated"
+      },
+      {
+        "atSeconds": 1.1624999999999979,
+        "courierId": "courier-1",
+        "id": "event-8",
+        "packageId": "pkg-1",
+        "type": "package_unreachable"
+      },
+      {
+        "atSeconds": 4.162499999999998,
+        "id": "event-9",
+        "type": "map_updated"
+      },
+      {
+        "atSeconds": 4.162499999999998,
+        "courierId": "courier-1",
+        "id": "event-10",
+        "packageId": "pkg-1",
+        "type": "package_resumed"
+      },
+      {
+        "atSeconds": 7.431909190670393,
+        "courierId": "courier-2",
+        "id": "event-11",
+        "packageId": "pkg-2",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 14.641996183916447,
+        "courierId": "courier-1",
+        "id": "event-12",
+        "packageId": "pkg-1",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 29.162499999999998,
+        "id": "event-13",
+        "packageId": "pkg-3",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 29.162499999999998,
+        "courierId": "courier-1",
+        "id": "event-14",
+        "packageId": "pkg-3",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 42.55899618391644,
+        "courierId": "courier-1",
+        "id": "event-15",
+        "packageId": "pkg-3",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 49.99090537458684,
+        "courierId": "courier-1",
+        "id": "event-16",
+        "packageId": "pkg-3",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 59.162499999999994,
+        "id": "event-17",
+        "roadId": "junction-home",
+        "type": "road_opened"
+      },
+      {
+        "atSeconds": 59.162499999999994,
+        "id": "event-18",
+        "packageId": "pkg-4",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 59.162499999999994,
+        "courierId": "courier-1",
+        "id": "event-19",
+        "packageId": "pkg-4",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 66.59440919067039,
+        "courierId": "courier-1",
+        "id": "event-20",
+        "packageId": "pkg-4",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 74.76638445226773,
+        "courierId": "courier-1",
+        "id": "event-21",
+        "packageId": "pkg-4",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 89.1625,
+        "id": "event-22",
+        "packageId": "pkg-5",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 89.1625,
+        "courierId": "courier-1",
+        "id": "event-23",
+        "packageId": "pkg-5",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 97.33447526159733,
+        "courierId": "courier-1",
+        "id": "event-24",
+        "packageId": "pkg-5",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 104.76638445226773,
+        "courierId": "courier-1",
+        "id": "event-25",
+        "packageId": "pkg-5",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 119.1625,
+        "id": "event-26",
+        "type": "map_updated"
+      }
+    ],
+    "map": {
+      "locations": [
+        {
+          "id": "depot",
+          "kind": "depot",
+          "label": "DEPOT",
+          "x": 11.46,
+          "y": 54.69
+        },
+        {
+          "id": "junction",
+          "kind": "junction",
+          "label": "JUNCTION",
+          "x": 40.63,
+          "y": 54.69
+        },
+        {
+          "id": "home",
+          "kind": "home",
+          "label": "HOME",
+          "x": 82.29,
+          "y": 22.66
+        },
+        {
+          "id": "shop",
+          "kind": "shop",
+          "label": "SHOP",
+          "x": 76.56,
+          "y": 82.03
+        },
+        {
+          "id": "new-home-n",
+          "kind": "home",
+          "label": "NEW HOME N",
+          "x": 89.06,
+          "y": 72.22
+        }
+      ],
+      "roads": [
+        {
+          "closed": false,
+          "from": "depot",
+          "id": "depot-junction",
+          "to": "junction"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-home",
+          "to": "home"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-shop",
+          "to": "shop"
+        },
+        {
+          "closed": false,
+          "from": "home",
+          "id": "home-shop",
+          "to": "shop"
+        },
+        {
+          "closed": false,
+          "from": "shop",
+          "id": "shop-new-home-n",
+          "to": "new-home-n"
+        }
+      ]
+    },
+    "nextEventNumber": 27,
+    "nextPackageNumber": 6,
+    "packages": [
+      {
+        "courierId": "courier-1",
+        "createdOrder": 1,
+        "from": "depot",
+        "id": "pkg-1",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "delivered",
+        "to": "home"
+      },
+      {
+        "courierId": "courier-2",
+        "createdOrder": 2,
+        "from": "depot",
+        "id": "pkg-2",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "delivered",
+        "to": "shop"
+      },
+      {
+        "courierId": "courier-1",
+        "createdOrder": 3,
+        "from": "depot",
+        "id": "pkg-3",
+        "pickedUp": true,
+        "priority": "urgent",
+        "source": "user",
+        "status": "delivered",
+        "to": "shop"
+      },
+      {
+        "courierId": "courier-1",
+        "createdOrder": 4,
+        "from": "depot",
+        "id": "pkg-4",
+        "pickedUp": true,
+        "priority": "urgent",
+        "source": "user",
+        "status": "delivered",
+        "to": "home"
+      },
+      {
+        "courierId": "courier-1",
+        "createdOrder": 5,
+        "from": "depot",
+        "id": "pkg-5",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "user",
+        "status": "delivered",
+        "to": "shop"
+      }
+    ]
+  },
+  "before": {
+    "couriers": [
+      {
+        "capacity": 2,
+        "id": "courier-1",
+        "locationId": "shop",
+        "name": "Mina",
+        "packageIds": [],
+        "segment": null
+      },
+      {
+        "capacity": 2,
+        "id": "courier-2",
+        "locationId": "shop",
+        "name": "Rook",
+        "packageIds": [],
+        "segment": null
+      }
+    ],
+    "distanceTraveled": 728.6457965370917,
+    "elapsedSeconds": 119.1625,
+    "events": [
+      {
+        "atSeconds": 0,
+        "id": "event-1",
+        "packageId": "pkg-1",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-2",
+        "packageId": "pkg-1",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "id": "event-3",
+        "packageId": "pkg-2",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-4",
+        "packageId": "pkg-2",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-5",
+        "packageId": "pkg-1",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-6",
+        "packageId": "pkg-2",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 1.1624999999999979,
+        "id": "event-7",
+        "type": "map_updated"
+      },
+      {
+        "atSeconds": 1.1624999999999979,
+        "courierId": "courier-1",
+        "id": "event-8",
+        "packageId": "pkg-1",
+        "type": "package_unreachable"
+      },
+      {
+        "atSeconds": 4.162499999999998,
+        "id": "event-9",
+        "type": "map_updated"
+      },
+      {
+        "atSeconds": 4.162499999999998,
+        "courierId": "courier-1",
+        "id": "event-10",
+        "packageId": "pkg-1",
+        "type": "package_resumed"
+      },
+      {
+        "atSeconds": 7.431909190670393,
+        "courierId": "courier-2",
+        "id": "event-11",
+        "packageId": "pkg-2",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 14.641996183916447,
+        "courierId": "courier-1",
+        "id": "event-12",
+        "packageId": "pkg-1",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 29.162499999999998,
+        "id": "event-13",
+        "packageId": "pkg-3",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 29.162499999999998,
+        "courierId": "courier-1",
+        "id": "event-14",
+        "packageId": "pkg-3",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 42.55899618391644,
+        "courierId": "courier-1",
+        "id": "event-15",
+        "packageId": "pkg-3",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 49.99090537458684,
+        "courierId": "courier-1",
+        "id": "event-16",
+        "packageId": "pkg-3",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 59.162499999999994,
+        "id": "event-17",
+        "roadId": "junction-home",
+        "type": "road_opened"
+      },
+      {
+        "atSeconds": 59.162499999999994,
+        "id": "event-18",
+        "packageId": "pkg-4",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 59.162499999999994,
+        "courierId": "courier-1",
+        "id": "event-19",
+        "packageId": "pkg-4",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 66.59440919067039,
+        "courierId": "courier-1",
+        "id": "event-20",
+        "packageId": "pkg-4",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 74.76638445226773,
+        "courierId": "courier-1",
+        "id": "event-21",
+        "packageId": "pkg-4",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 89.1625,
+        "id": "event-22",
+        "packageId": "pkg-5",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 89.1625,
+        "courierId": "courier-1",
+        "id": "event-23",
+        "packageId": "pkg-5",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 97.33447526159733,
+        "courierId": "courier-1",
+        "id": "event-24",
+        "packageId": "pkg-5",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 104.76638445226773,
+        "courierId": "courier-1",
+        "id": "event-25",
+        "packageId": "pkg-5",
+        "type": "package_delivered"
+      }
+    ],
+    "map": {
+      "locations": [
+        {
+          "id": "depot",
+          "kind": "depot",
+          "label": "DEPOT",
+          "x": 11.46,
+          "y": 54.69
+        },
+        {
+          "id": "junction",
+          "kind": "junction",
+          "label": "JUNCTION",
+          "x": 40.63,
+          "y": 54.69
+        },
+        {
+          "id": "home",
+          "kind": "home",
+          "label": "HOME",
+          "x": 82.29,
+          "y": 22.66
+        },
+        {
+          "id": "shop",
+          "kind": "shop",
+          "label": "SHOP",
+          "x": 76.56,
+          "y": 82.03
+        }
+      ],
+      "roads": [
+        {
+          "closed": false,
+          "from": "depot",
+          "id": "depot-junction",
+          "to": "junction"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-home",
+          "to": "home"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-shop",
+          "to": "shop"
+        },
+        {
+          "closed": false,
+          "from": "home",
+          "id": "home-shop",
+          "to": "shop"
+        }
+      ]
+    },
+    "nextEventNumber": 26,
+    "nextPackageNumber": 6,
+    "packages": [
+      {
+        "courierId": "courier-1",
+        "createdOrder": 1,
+        "from": "depot",
+        "id": "pkg-1",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "delivered",
+        "to": "home"
+      },
+      {
+        "courierId": "courier-2",
+        "createdOrder": 2,
+        "from": "depot",
+        "id": "pkg-2",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "delivered",
+        "to": "shop"
+      },
+      {
+        "courierId": "courier-1",
+        "createdOrder": 3,
+        "from": "depot",
+        "id": "pkg-3",
+        "pickedUp": true,
+        "priority": "urgent",
+        "source": "user",
+        "status": "delivered",
+        "to": "shop"
+      },
+      {
+        "courierId": "courier-1",
+        "createdOrder": 4,
+        "from": "depot",
+        "id": "pkg-4",
+        "pickedUp": true,
+        "priority": "urgent",
+        "source": "user",
+        "status": "delivered",
+        "to": "home"
+      },
+      {
+        "courierId": "courier-1",
+        "createdOrder": 5,
+        "from": "depot",
+        "id": "pkg-5",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "user",
+        "status": "delivered",
+        "to": "shop"
+      }
+    ]
+  },
+  "commandReceipt": "JEV · TYPESAFE\njev-1.13.0\n100 ms total\n\nJev · dispatch delivery · 100 ms route\n\nReview changes",
+  "commit": "030cdd8",
+  "comparisonDisabled": true,
+  "completed": {
+    "couriers": [
+      {
+        "capacity": 2,
+        "id": "courier-1",
+        "locationId": "new-home-n",
+        "name": "Mina",
+        "packageIds": [],
+        "segment": null
+      },
+      {
+        "capacity": 2,
+        "id": "courier-2",
+        "locationId": "shop",
+        "name": "Rook",
+        "packageIds": [],
+        "segment": null
+      }
+    ],
+    "distanceTraveled": 893.1737915513918,
+    "elapsedSeconds": 159.1625,
+    "events": [
+      {
+        "atSeconds": 0,
+        "id": "event-1",
+        "packageId": "pkg-1",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-2",
+        "packageId": "pkg-1",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "id": "event-3",
+        "packageId": "pkg-2",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-4",
+        "packageId": "pkg-2",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-1",
+        "id": "event-5",
+        "packageId": "pkg-1",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 0,
+        "courierId": "courier-2",
+        "id": "event-6",
+        "packageId": "pkg-2",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 1.1624999999999979,
+        "id": "event-7",
+        "type": "map_updated"
+      },
+      {
+        "atSeconds": 1.1624999999999979,
+        "courierId": "courier-1",
+        "id": "event-8",
+        "packageId": "pkg-1",
+        "type": "package_unreachable"
+      },
+      {
+        "atSeconds": 4.162499999999998,
+        "id": "event-9",
+        "type": "map_updated"
+      },
+      {
+        "atSeconds": 4.162499999999998,
+        "courierId": "courier-1",
+        "id": "event-10",
+        "packageId": "pkg-1",
+        "type": "package_resumed"
+      },
+      {
+        "atSeconds": 7.431909190670393,
+        "courierId": "courier-2",
+        "id": "event-11",
+        "packageId": "pkg-2",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 14.641996183916447,
+        "courierId": "courier-1",
+        "id": "event-12",
+        "packageId": "pkg-1",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 29.162499999999998,
+        "id": "event-13",
+        "packageId": "pkg-3",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 29.162499999999998,
+        "courierId": "courier-1",
+        "id": "event-14",
+        "packageId": "pkg-3",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 42.55899618391644,
+        "courierId": "courier-1",
+        "id": "event-15",
+        "packageId": "pkg-3",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 49.99090537458684,
+        "courierId": "courier-1",
+        "id": "event-16",
+        "packageId": "pkg-3",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 59.162499999999994,
+        "id": "event-17",
+        "roadId": "junction-home",
+        "type": "road_opened"
+      },
+      {
+        "atSeconds": 59.162499999999994,
+        "id": "event-18",
+        "packageId": "pkg-4",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 59.162499999999994,
+        "courierId": "courier-1",
+        "id": "event-19",
+        "packageId": "pkg-4",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 66.59440919067039,
+        "courierId": "courier-1",
+        "id": "event-20",
+        "packageId": "pkg-4",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 74.76638445226773,
+        "courierId": "courier-1",
+        "id": "event-21",
+        "packageId": "pkg-4",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 89.1625,
+        "id": "event-22",
+        "packageId": "pkg-5",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 89.1625,
+        "courierId": "courier-1",
+        "id": "event-23",
+        "packageId": "pkg-5",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 97.33447526159733,
+        "courierId": "courier-1",
+        "id": "event-24",
+        "packageId": "pkg-5",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 104.76638445226773,
+        "courierId": "courier-1",
+        "id": "event-25",
+        "packageId": "pkg-5",
+        "type": "package_delivered"
+      },
+      {
+        "atSeconds": 119.1625,
+        "id": "event-26",
+        "type": "map_updated"
+      },
+      {
+        "atSeconds": 119.1625,
+        "id": "event-27",
+        "packageId": "pkg-6",
+        "type": "package_created"
+      },
+      {
+        "atSeconds": 119.1625,
+        "courierId": "courier-1",
+        "id": "event-28",
+        "packageId": "pkg-6",
+        "type": "package_assigned"
+      },
+      {
+        "atSeconds": 126.59440919067039,
+        "courierId": "courier-1",
+        "id": "event-29",
+        "packageId": "pkg-6",
+        "type": "package_picked_up"
+      },
+      {
+        "atSeconds": 135.61529950143,
+        "courierId": "courier-1",
+        "id": "event-30",
+        "packageId": "pkg-6",
+        "type": "package_delivered"
+      }
+    ],
+    "map": {
+      "locations": [
+        {
+          "id": "depot",
+          "kind": "depot",
+          "label": "DEPOT",
+          "x": 11.46,
+          "y": 54.69
+        },
+        {
+          "id": "junction",
+          "kind": "junction",
+          "label": "JUNCTION",
+          "x": 40.63,
+          "y": 54.69
+        },
+        {
+          "id": "home",
+          "kind": "home",
+          "label": "HOME",
+          "x": 82.29,
+          "y": 22.66
+        },
+        {
+          "id": "shop",
+          "kind": "shop",
+          "label": "SHOP",
+          "x": 76.56,
+          "y": 82.03
+        },
+        {
+          "id": "new-home-n",
+          "kind": "home",
+          "label": "NEW HOME N",
+          "x": 89.06,
+          "y": 72.22
+        }
+      ],
+      "roads": [
+        {
+          "closed": false,
+          "from": "depot",
+          "id": "depot-junction",
+          "to": "junction"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-home",
+          "to": "home"
+        },
+        {
+          "closed": false,
+          "from": "junction",
+          "id": "junction-shop",
+          "to": "shop"
+        },
+        {
+          "closed": false,
+          "from": "home",
+          "id": "home-shop",
+          "to": "shop"
+        },
+        {
+          "closed": false,
+          "from": "shop",
+          "id": "shop-new-home-n",
+          "to": "new-home-n"
+        }
+      ]
+    },
+    "nextEventNumber": 31,
+    "nextPackageNumber": 7,
+    "packages": [
+      {
+        "courierId": "courier-1",
+        "createdOrder": 1,
+        "from": "depot",
+        "id": "pkg-1",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "delivered",
+        "to": "home"
+      },
+      {
+        "courierId": "courier-2",
+        "createdOrder": 2,
+        "from": "depot",
+        "id": "pkg-2",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "demo",
+        "status": "delivered",
+        "to": "shop"
+      },
+      {
+        "courierId": "courier-1",
+        "createdOrder": 3,
+        "from": "depot",
+        "id": "pkg-3",
+        "pickedUp": true,
+        "priority": "urgent",
+        "source": "user",
+        "status": "delivered",
+        "to": "shop"
+      },
+      {
+        "courierId": "courier-1",
+        "createdOrder": 4,
+        "from": "depot",
+        "id": "pkg-4",
+        "pickedUp": true,
+        "priority": "urgent",
+        "source": "user",
+        "status": "delivered",
+        "to": "home"
+      },
+      {
+        "courierId": "courier-1",
+        "createdOrder": 5,
+        "from": "depot",
+        "id": "pkg-5",
+        "pickedUp": true,
+        "priority": "normal",
+        "source": "user",
+        "status": "delivered",
+        "to": "shop"
+      },
+      {
+        "courierId": "courier-1",
+        "createdOrder": 6,
+        "from": "depot",
+        "id": "pkg-6",
+        "pickedUp": true,
+        "priority": "urgent",
+        "source": "user",
+        "status": "delivered",
+        "to": "new-home-n"
+      }
+    ]
+  },
+  "evidence": "Generated raster uploaded in production; live Codex and Jev; actual3D and engine",
+  "firstAttempt": {
+    "applied": false,
+    "latencyMs": 7401,
+    "reason": "Fixture inadvertently changed existing visible labels",
+    "warningText": "started for this simulation.\n\nRoute plan\nDelivered 5\nWaiting 0\n1:59\nROUTE NETWORK\n4 STOPS\n4 ROADS\n3D world\n2D map\nReset view\nInspect a stop, road, or courier\nInspect…\nMina\nRook\nDEPOT\nJUNCTION\nHOME\nSHOP\nDEPOT – JUNCTION · depot-junction\nJUNCTION – HOME · junction-home\nJUNCTION – SHOP · junction-shop\nHOME – SHOP · home-shop\nDrag to orbit · scroll or pinch to zoom\nDepot\nHome\nShop\nJunction\nCourier\nDelivery route\nAlternate route\nClosed road\nINSPECT\nSelect a stop, road, or courier\nPlayback controls 0.25× speed\nCompare road change\n\n1 change applied.\n\nWhat should happen?\n\nAsk for a delivery or change a route. Review before applying.\n\nAuto\nGive a delivery instruction\n◉\nDictate\nReview command\n↗\n\nDictation: stopped. Speech recognition may process audio. Review the transcript before sending.\n\nMore controls\nManual dispatch · provider status\nPaper map\nReady to review\nREADY TO SCAN\nDrawing key\n↳\nnew-home-synthetic.png\n60 KB\n↑\nUpload photo\nUse sample sketch\nUse camera\nRead paper map\n↗\n\nThe image is sent only when you choose Read paper map.\n\n5 stops · 5 roads · 7401 ms · review required\n\nSCAN COMPLETE · REVIEW REQUIRED\nCODEX · Codex default (model not reported)\n7401 ms\n5 stops\n5 roads\nlocation_identity_conflict\nlocation_id_reused_for_different_place\nprevious_locations_not_confidently_matched\nroad_id_reused_for_different_edge\nprevious_roads_not_confidently_matched\nAdjust map\nEdit the scanned proposal\n5 stops · 5 roads\n⌄\n\nPROPOSED MAP\n\nReview before applying\n5 / 5\nReview stops and connections before applying.\nStops\n5\n⌄\nRoads\n5\n⌄\n\n✓\nStops, IDs, and road endpoints are valid.\n\nConfirm changes\n↗\nRun details\nMetrics, couriers, packages, and activity\n⌄\nPAPERWORLD / DISPATCH WORKSPACE\nLOCAL SIMULATION · PROVIDER RESULT SHOWN PER SCAN\nFINAL CHECK · REPLAYED SCANS · SYNTHETIC PAPER · LIVE COMMANDS"
+  },
+  "stableLabelsScanReceipt": "5 stops · 5 roads · 7086 ms · review required\n\nSCAN COMPLETE · REVIEW REQUIRED\nCODEX · Codex default (model not reported)\n7086 ms\n5 stops\n5 roads\nAdjust map"
+}
