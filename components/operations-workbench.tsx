@@ -51,6 +51,9 @@ function commandDescription(command: Command, map: PaperMap) {
   if (command.type === "create-package") {
     return `Create ${command.priority} package · ${locationName(command.from)} → ${locationName(command.to)}`;
   }
+  if (command.type === "dispatch-delivery") {
+    return `Create and dispatch ${command.priority} delivery · ${locationName(command.from)} → ${locationName(command.to)} · ${command.courierId ? `courier ${command.courierId}` : "auto-assign courier"}`;
+  }
   if (command.type === "set-priority") return `Set ${command.packageId} priority · ${command.priority}`;
   if (command.type === "set-road") return `${command.closed ? "Close" : "Open"} road · ${command.roadId}`;
   return `Assign ${command.packageId} to ${command.courierId}`;

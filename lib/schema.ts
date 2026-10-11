@@ -53,6 +53,7 @@ export const prioritySchema = z.enum(["normal", "urgent"]);
 
 export const commandSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("create-package"), from: idSchema, to: idSchema, priority: prioritySchema }).strict(),
+  z.object({ type: z.literal("dispatch-delivery"), from: idSchema, to: idSchema, priority: prioritySchema, courierId: idSchema.nullable().optional() }).strict(),
   z.object({ type: z.literal("set-priority"), packageId: idSchema, priority: prioritySchema }).strict(),
   z.object({ type: z.literal("set-road"), roadId: idSchema, closed: z.boolean() }).strict(),
   z.object({ type: z.literal("assign-package"), packageId: idSchema, courierId: idSchema }).strict(),
@@ -100,6 +101,7 @@ export const courierSchema = z.object({
 
 export const packageSchema = z.object({
   id: idSchema,
+  source: z.enum(["user", "demo"]).optional(),
   from: idSchema,
   to: idSchema,
   priority: prioritySchema,

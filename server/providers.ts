@@ -11,11 +11,13 @@ import {
   courierSchema,
   packageSchema,
   paperMapSchema,
+  simulationStateSchema,
   type Command,
   type Courier,
   type Package,
   type PaperMap,
 } from "../lib/schema";
+import { selectAvailableCourierForDelivery } from "../lib/simulation";
 import { ApiError } from "./security";
 
 const IMAGE_LIMITS = { "image/png": 1_500_000, "image/jpeg": 1_500_000, "image/webp": 1_500_000 } as const;
@@ -23,20 +25,40 @@ const CODEX_TIMEOUT_MS = 75_000;
 const TYPE_SAFE_TIMEOUT_MS = 12_000;
 const OPENAI_TIMEOUT_MS = 25_000;
 const MAX_PROVIDER_OUTPUT_BYTES = 64_000;
-const COMMAND_MODES = ["jev", "openai"] as const;
+const COMMAND_MODES = ["auto", "jev", "openai"] as const;
 
 const commandRequestSchema = z.object({
   text: z.string().trim().min(1).max(2_000),
   map: paperMapSchema,
   packages: z.array(packageSchema).max(256),
   couriers: z.array(courierSchema).max(16),
-  mode: z.enum(COMMAND_MODES),
-}).strict();
+  mode: z.enum(COMMAND_MODES).default("auto"),
+}).strict().superRefine((request, context) => {
+  const state = simulationStateSchema.safeParse({
+    map: request.map,
+    couriers: request.couriers,
+    packages: request.packages,
+    elapsedSeconds: 0,
+    distanceTraveled: 0,
+    events: [],
+    nextPackageNumber: 1,
+    nextEventNumber: 1,
+  });
+  if (!state.success) {
+    for (const issue of state.error.issues) {
+      context.addIssue({ code: "custom", path: issue.path, message: issue.message });
+    }
+  }
+});
 
 const commandProposalSchema = z.object({
   commands: commandsSchema,
-  clarification: z.string().trim().max(400).nullable(),
-}).strict();
+  clarification: z.string().trim().min(1).max(400).nullable(),
+}).strict().superRefine((proposal, context) => {
+  if ((proposal.commands.length === 0) === (proposal.clarification === null)) {
+    context.addIssue({ code: "custom", path: ["clarification"], message: "A proposal must contain commands or a clarification, never both or neither." });
+  }
+});
 
 const typeSafeResponseSchema = z.object({
   model: z.string().max(80),
@@ -53,7 +75,7 @@ const typeSafeResponseSchema = z.object({
 });
 
 const typeSafeChoiceLabels = {
-  operation: ["create_package", "set_priority", "set_road", "assign_package", "clarify"],
+  operation: ["create_package", "dispatch_delivery", "set_priority", "set_road", "assign_package", "delegate_to_codex", "clarify"],
   priority: ["normal", "urgent", "unspecified"],
   road_state: ["open", "closed", "unspecified"],
 } as const;
@@ -74,6 +96,9 @@ export type CommandProposal = {
   commands: Command[];
   clarification: string | null;
   provider: "typesafe" | "codex" | "openai";
+  routedBy?: "typesafe";
+  routeCategory?: "create_package" | "dispatch_delivery" | "set_priority" | "set_road" | "assign_package" | "delegate_to_codex" | "clarify";
+  routerLatencyMs?: number;
   model: string;
   latencyMs: number;
 };
@@ -115,6 +140,7 @@ const commandProposalJsonSchema = {
   properties: {
     commands: { type: "array", maxItems: 64, items: { anyOf: [
       { type: "object", additionalProperties: false, properties: { type: { const: "create-package" }, from: { type: "string" }, to: { type: "string" }, priority: { type: "string", enum: ["normal", "urgent"] } }, required: ["type", "from", "to", "priority"] },
+      { type: "object", additionalProperties: false, properties: { type: { const: "dispatch-delivery" }, from: { type: "string" }, to: { type: "string" }, priority: { type: "string", enum: ["normal", "urgent"] }, courierId: { anyOf: [{ type: "string" }, { type: "null" }] } }, required: ["type", "from", "to", "priority", "courierId"] },
       { type: "object", additionalProperties: false, properties: { type: { const: "set-priority" }, packageId: { type: "string" }, priority: { type: "string", enum: ["normal", "urgent"] } }, required: ["type", "packageId", "priority"] },
       { type: "object", additionalProperties: false, properties: { type: { const: "set-road" }, roadId: { type: "string" }, closed: { type: "boolean" } }, required: ["type", "roadId", "closed"] },
       { type: "object", additionalProperties: false, properties: { type: { const: "assign-package" }, packageId: { type: "string" }, courierId: { type: "string" } }, required: ["type", "packageId", "courierId"] },
@@ -241,7 +267,7 @@ async function runCodexJson(options: { prompt: string; schema: unknown; image?: 
       child.once("close", (code) => {
         if (forcedError) { finish(forcedError); return; }
         if (code !== 0) { finish(new ApiError(502, "provider_failed")); return; }
-        let selectedModel = "codex-chatgpt";
+        let selectedModel = "Codex default (model not reported)";
         for (const line of Buffer.concat(stdout).toString("utf8").split(/\r?\n/)) {
           if (!line) continue;
           let event: unknown;
@@ -395,15 +421,108 @@ export async function parseMapImage(image: string, previous?: PaperMap): Promise
   return { map: reconciled.map, provider: "codex", model: result.model, latencyMs: result.latencyMs, requiresReview: true, reviewReasons: reconciled.reviewReasons };
 }
 
-function exactMentions(text: string, entries: Array<{ id: string; name: string }>): string[] {
+type EntityMention = { id: string; start: number; end: number };
+
+function entityMentionSpans(text: string, entries: Array<{ id: string; name: string }>): EntityMention[] {
   const normalized = normalizedLabel(text);
-  return entries.filter((entry) => {
-    const choices = [entry.id, entry.name].map(normalizedLabel).filter((part) => part.length > 0);
-    return choices.some((part) => {
-      const escaped = part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      return new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}($|[^\\p{L}\\p{N}])`, "u").test(normalized);
-    });
-  }).map((entry) => entry.id);
+  const mentions: EntityMention[] = [];
+  for (const entry of entries) {
+    const choices = [...new Set([entry.id, entry.name].map(normalizedLabel).filter((part) => part.length > 0))];
+    for (const choice of choices) {
+      const escaped = choice.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const expression = new RegExp("(^|[^\\p{L}\\p{N}])(" + escaped + ")(?=$|[^\\p{L}\\p{N}])", "gu");
+      let match: RegExpExecArray | null;
+      while ((match = expression.exec(normalized)) !== null) {
+        const start = match.index + match[1].length;
+        mentions.push({ id: entry.id, start, end: start + match[2].length });
+      }
+    }
+  }
+  return mentions;
+}
+
+function mostSpecificMentions(mentions: EntityMention[]): EntityMention[] {
+  return mentions.filter((mention) => !mentions.some((other) =>
+    other.start <= mention.start && other.end >= mention.end &&
+    (other.start < mention.start || other.end > mention.end),
+  ));
+}
+
+function exactMentions(text: string, entries: Array<{ id: string; name: string }>): string[] {
+  return [...new Set(mostSpecificMentions(entityMentionSpans(text, entries)).map((mention) => mention.id))];
+}
+
+function ambiguousMentionIds(text: string, entries: Array<{ id: string; name: string }>): Set<string> {
+  const mentions = mostSpecificMentions(entityMentionSpans(text, entries));
+  const ambiguous = new Set<string>();
+  for (let left = 0; left < mentions.length; left += 1) {
+    for (let right = left + 1; right < mentions.length; right += 1) {
+      const first = mentions[left];
+      const second = mentions[right];
+      if (first.id !== second.id && first.start < second.end && second.start < first.end) {
+        ambiguous.add(first.id);
+        ambiguous.add(second.id);
+      }
+    }
+  }
+  return ambiguous;
+}
+
+type EntityMentionPair = { left: string; right: string };
+
+function explicitEntityPairs(text: string): EntityMentionPair[] {
+  const patterns = [
+    /\bfrom\s+(.+?)\s+to\s+(.+?)(?=\s+(?:(?:and|then)\s+)?(?:create|set|assign|open|close|reopen|change|update)\b|\s+(?:with|as|priority|urgent|normal|standard|please|now)\b|[,.!?;]|$)/giu,
+    /\bbetween\s+(.+?)\s+and\s+(.+?)(?=\s+(?:(?:and|then)\s+)?(?:create|set|assign|open|close|reopen|change|update)\b|\s+(?:please|now)\b|[,.!?;]|$)/giu,
+  ];
+  const pairs: EntityMentionPair[] = [];
+  for (const pattern of patterns) {
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(text)) !== null) {
+      pairs.push({ left: match[1].trim(), right: match[2].trim() });
+    }
+  }
+  return pairs;
+}
+
+function explicitRoadEntityPairs(text: string): EntityMentionPair[] {
+  const patterns = [
+    /\broad\s+between\s+(.+?)\s+and\s+(.+?)(?=\s+(?:(?:and|then)\s+)?(?:create|set|assign|open|close|reopen|change|update)\b|\s+(?:please|now)\b|[,.!?;]|$)/giu,
+    /\broad\s+from\s+(.+?)\s+to\s+(.+?)(?=\s+(?:(?:and|then)\s+)?(?:create|set|assign|open|close|reopen|change|update)\b|\s+(?:with|as|priority|urgent|normal|standard|please|now)\b|[,.!?;]|$)/giu,
+  ];
+  const pairs: EntityMentionPair[] = [];
+  for (const pattern of patterns) {
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(text)) !== null) {
+      pairs.push({ left: match[1].trim(), right: match[2].trim() });
+    }
+  }
+  return pairs;
+}
+
+function roadPairResolutions(text: string, map: PaperMap): Array<{ roadIds: string[]; ambiguous: boolean }> {
+  if (!/\broad\b/i.test(text)) return [];
+  const locations = map.locations.map((location) => ({ id: location.id, name: location.label }));
+  return explicitRoadEntityPairs(text).map(({ left, right }) => {
+    const leftIds = exactMentions(left, locations);
+    const rightIds = exactMentions(right, locations);
+    const roadIds = [...new Set(map.roads.filter((road) =>
+      (leftIds.includes(road.from) && rightIds.includes(road.to)) ||
+      (leftIds.includes(road.to) && rightIds.includes(road.from)),
+    ).map((road) => road.id))];
+    return { roadIds, ambiguous: leftIds.length !== 1 || rightIds.length !== 1 || roadIds.length !== 1 };
+  });
+}
+
+function resolveJevRoadMention(text: string, map: PaperMap): { roadIds: string[]; ambiguous: boolean } {
+  const directRoadIds = exactMentions(text, map.roads.map((road) => ({ id: road.id, name: road.id })));
+  const pairResolutions = roadPairResolutions(text, map);
+  const roadIds = [...new Set([...directRoadIds, ...pairResolutions.flatMap((pair) => pair.roadIds)])];
+  const ambiguousIds = ambiguousMentionIds(text, map.roads.map((road) => ({ id: road.id, name: road.id })));
+  return {
+    roadIds,
+    ambiguous: directRoadIds.length > 1 || pairResolutions.some((pair) => pair.ambiguous) || roadIds.some((id) => ambiguousIds.has(id)),
+  };
 }
 
 function validateProposedCommands(commands: Command[], context: z.infer<typeof commandRequestSchema>): string | null {
@@ -411,13 +530,88 @@ function validateProposedCommands(commands: Command[], context: z.infer<typeof c
   const roads = new Set(context.map.roads.map((road) => road.id));
   const packages = new Map(context.packages.map((pkg) => [pkg.id, pkg]));
   const couriers = new Map(context.couriers.map((courier) => [courier.id, courier]));
+  const locationEntries = context.map.locations.map((location) => ({ id: location.id, name: location.label }));
+  const packageEntries = context.packages.map((pkg) => ({ id: pkg.id, name: pkg.id }));
+  const courierEntries = context.couriers.map((courier) => ({ id: courier.id, name: courier.name }));
+  const roadEntries = context.map.roads.map((road) => ({ id: road.id, name: road.id }));
+  const ambiguousLocations = ambiguousMentionIds(context.text, locationEntries);
+  const ambiguousPackages = ambiguousMentionIds(context.text, packageEntries);
+  const ambiguousCouriers = ambiguousMentionIds(context.text, courierEntries);
+  const ambiguousRoadIds = ambiguousMentionIds(context.text, roadEntries);
+  const explicitlyMentionedRoadIds = exactMentions(context.text, roadEntries);
+  const explicitRoadPairs = roadPairResolutions(context.text, context.map);
   for (const command of commands) {
-    if (command.type === "create-package" && (!locations.has(command.from) || !locations.has(command.to) || command.from === command.to)) return "Choose two different locations on this map.";
-    if (command.type === "set-road" && !roads.has(command.roadId)) return "Choose a road on this map.";
-    if (command.type === "set-priority" && !packages.has(command.packageId)) return "Choose an existing package.";
-    if (command.type === "assign-package" && (!packages.has(command.packageId) || !couriers.has(command.courierId))) return "Choose an existing package and courier.";
+    if (command.type === "create-package") {
+      if (!locations.has(command.from) || !locations.has(command.to) || command.from === command.to) return "Choose two different locations on this map.";
+      if (ambiguousLocations.has(command.from) || ambiguousLocations.has(command.to)) return "Name the package locations more clearly; one or both labels match multiple stops.";
+    }
+    if (command.type === "dispatch-delivery") {
+      if (!locations.has(command.from) || !locations.has(command.to) || command.from === command.to) return "Choose two different locations on this map.";
+      if (ambiguousLocations.has(command.from) || ambiguousLocations.has(command.to)) return "Name the delivery locations more clearly; one or both labels match multiple stops.";
+      if (!selectAvailableCourierForDelivery(context.map, context.couriers, command.from, command.to, command.courierId ?? undefined)) {
+        return "No available courier has capacity and a reachable route for this delivery.";
+      }
+    }
+    if (command.type === "set-road") {
+      if (!roads.has(command.roadId)) return "Choose a road on this map.";
+      if (ambiguousRoadIds.has(command.roadId)) return "Name the road more clearly; its ID matches more than one road.";
+      const matchingPairs = explicitRoadPairs.filter((pair) => pair.roadIds.includes(command.roadId));
+      if (matchingPairs.some((pair) => pair.ambiguous)) return "Name one road by its ID or by an unambiguous pair of endpoints.";
+      if (!explicitlyMentionedRoadIds.includes(command.roadId) && !matchingPairs.some((pair) => pair.roadIds.length === 1)) {
+        return "Name the road by its ID or by an unambiguous pair of endpoints.";
+      }
+    }
+    if (command.type === "set-priority") {
+      if (!packages.has(command.packageId)) return "Choose an existing package.";
+      if (ambiguousPackages.has(command.packageId)) return "Name the package more clearly; its ID matches more than one package.";
+    }
+    if (command.type === "assign-package") {
+      if (!packages.has(command.packageId) || !couriers.has(command.courierId)) return "Choose an existing package and courier.";
+      if (ambiguousPackages.has(command.packageId) || ambiguousCouriers.has(command.courierId)) return "Name the package and courier more clearly; one or both names match multiple entities.";
+    }
   }
   return null;
+}
+
+function dispatchRequestClauses(text: string): string[] {
+  return text.split(/\s+\b(?:and|then)\s+(?=(?:dispatch|send|deliver|assign|set|open|close|reopen|change|update|create)\b|(?:a|another|the next|one more)\s+delivery\b)/iu)
+    .filter((clause) => /\b(?:dispatch|send|deliver)\b|\bcreate\b(?=[^.!?;]{0,80}\bdelivery\b)/iu.test(clause));
+}
+
+function resolveDispatchCouriers(commands: Command[], context: z.infer<typeof commandRequestSchema>): { commands: Command[]; error?: string } {
+  const courierEntries = context.couriers.map((courier) => ({ id: courier.id, name: courier.name }));
+  const dispatchIndexes = commands.flatMap((command, index) => command.type === "dispatch-delivery" ? [index] : []);
+  const clauses = dispatchRequestClauses(context.text);
+  const allMentionedCouriers = exactMentions(context.text, courierEntries);
+  if (dispatchIndexes.length > 0 && clauses.length !== dispatchIndexes.length &&
+      (ambiguousMentionIds(context.text, courierEntries).size > 0 || allMentionedCouriers.length > 0)) {
+    return { commands, error: "Name the courier in one clear delivery clause, or leave couriers unspecified for automatic assignment." };
+  }
+  const alignedClauses = clauses.length === dispatchIndexes.length ? clauses : [];
+  const planningCouriers = context.couriers.map((courier) => ({ ...courier, packageIds: [...courier.packageIds] }));
+  const nextCommands = [...commands];
+  for (const [dispatchOrder, index] of dispatchIndexes.entries()) {
+    const command = nextCommands[index];
+    if (command?.type !== "dispatch-delivery") continue;
+    const clause = alignedClauses[dispatchOrder] ?? "";
+    const mentionedCouriers = exactMentions(clause, courierEntries);
+    if (ambiguousMentionIds(clause, courierEntries).size > 0 || mentionedCouriers.length > 1) {
+      return { commands, error: "Name one courier clearly for each delivery, or leave couriers unspecified for automatic assignment." };
+    }
+    const requestedCourierId = mentionedCouriers[0];
+    const courierId = selectAvailableCourierForDelivery(context.map, planningCouriers, command.from, command.to, requestedCourierId);
+    if (!courierId) {
+      if (requestedCourierId) {
+        const courierName = courierEntries.find((courier) => courier.id === requestedCourierId)?.name ?? requestedCourierId;
+        return { commands, error: `${courierName} does not have capacity and a reachable route for this delivery. Choose another courier or leave the courier unspecified for automatic assignment.` };
+      }
+      return { commands, error: "No available courier has capacity and a reachable route for this delivery." };
+    }
+    const planningCourier = planningCouriers.find((courier) => courier.id === courierId);
+    planningCourier?.packageIds.push("planned-" + (dispatchOrder + 1));
+    nextCommands[index] = { ...command, courierId };
+  }
+  return { commands: nextCommands };
 }
 
 function clarification(text: string, provider: CommandProposal["provider"], model: string, latencyMs: number): CommandProposal {
@@ -432,7 +626,7 @@ async function callTypeSafeDecision(text: string, context: z.infer<typeof comman
     state,
     model: typeSafeModel(),
     questions: {
-      operation: { type: "choice", instructions: "Classify the one requested operation. Do not choose entities or plan routes. If multiple operations are requested, the instruction is unclear, or the request does not match one choice, choose clarify.", criteria: { create_package: "Create one package between two stated locations.", set_priority: "Change one existing package priority.", set_road: "Open or close one stated road.", assign_package: "Assign one existing package to one stated courier.", clarify: "The request is ambiguous, compound, or does not fit a single operation." } },
+      operation: { type: "choice", instructions: "Classify the requested task category only. Do not choose entities, couriers, routes, difficulty, or a plan. For a clear compound request with multiple operations, choose delegate_to_codex. For one supported operation choose its category. For an unclear or unsupported request choose clarify.", criteria: { create_package: "Create one package between two stated locations without dispatching it.", dispatch_delivery: "Create and assign one delivery between two stated locations; a courier name is optional.", set_priority: "Change one existing package priority.", set_road: "Open or close one stated road.", assign_package: "Assign one existing package to one stated courier.", delegate_to_codex: "The request clearly asks for multiple operations or a compound plan that should be returned as constrained typed commands.", clarify: "The request is unclear or unsupported. Do not use this for compound requests." } },
       priority: { type: "choice", instructions: "Choose the priority explicitly requested. If no priority is stated, choose unspecified.", criteria: { normal: "The request explicitly says normal or standard priority.", urgent: "The request explicitly says urgent or high priority.", unspecified: "No explicit priority is stated." } },
       road_state: { type: "choice", instructions: "Choose the requested state for a road. If no road state is explicitly requested, choose unspecified.", criteria: { open: "The request explicitly asks to open or reopen a road.", closed: "The request explicitly asks to close a road.", unspecified: "No road state is stated." } },
     },
@@ -467,28 +661,53 @@ async function callTypeSafeDecision(text: string, context: z.infer<typeof comman
   return { choices, confidence, model: body.data.model, latencyMs: Math.round(performance.now() - started) };
 }
 
-async function proposeWithJev(context: z.infer<typeof commandRequestSchema>): Promise<CommandProposal> {
-  const result = await callTypeSafeDecision(context.text, context);
+async function proposeWithJev(
+  context: z.infer<typeof commandRequestSchema>,
+  routedDecision?: Awaited<ReturnType<typeof callTypeSafeDecision>>,
+): Promise<CommandProposal> {
+  const result = routedDecision ?? await callTypeSafeDecision(context.text, context);
+  if (result.choices.operation === "delegate_to_codex") {
+    return clarification("This request needs a compound plan; use automatic mode to route it to the planner.", "typesafe", result.model, result.latencyMs);
+  }
   if (result.confidence < 0.68 || result.choices.operation === "clarify") return clarification("Please state one operation clearly, such as create a package, change a package priority, open or close a road, or assign a package.", "typesafe", result.model, result.latencyMs);
   const mapEntries = context.map.locations.map((location) => ({ id: location.id, name: location.label }));
   const packageEntries = context.packages.map((pkg) => ({ id: pkg.id, name: pkg.id }));
   const courierEntries = context.couriers.map((courier) => ({ id: courier.id, name: courier.name }));
-  const roadEntries = context.map.roads.map((road) => ({ id: road.id, name: `${road.id} ${road.from} ${road.to}` }));
   const mentionedLocations = exactMentions(context.text, mapEntries);
   const mentionedPackages = exactMentions(context.text, packageEntries);
   const mentionedCouriers = exactMentions(context.text, courierEntries);
-  const mentionedRoads = exactMentions(context.text, roadEntries);
+  const mentionedRoads = resolveJevRoadMention(context.text, context.map);
   let commands: Command[] = [];
 
   switch (result.choices.operation) {
     case "create_package": {
-      const explicitOrder = /\bfrom\s+(.+?)\s+to\s+(.+?)(?:\s+(?:with|as|priority|urgent|normal)\b|$)/i.exec(context.text);
-      const fromMatch = explicitOrder ? exactMentions(explicitOrder[1], mapEntries) : [];
-      const toMatch = explicitOrder ? exactMentions(explicitOrder[2], mapEntries) : [];
-      const from = fromMatch.length === 1 ? fromMatch[0] : undefined;
-      const to = toMatch.length === 1 ? toMatch[0] : undefined;
+      const pairs = explicitEntityPairs(context.text).map(({ left, right }) => ({
+        from: exactMentions(left, mapEntries),
+        to: exactMentions(right, mapEntries),
+      }));
+      const pair = pairs.length === 1 ? pairs[0] : undefined;
+      const from = pair?.from.length === 1 ? pair.from[0] : undefined;
+      const to = pair?.to.length === 1 ? pair.to[0] : undefined;
       if (!from || !to || from === to || result.choices.priority === "unspecified") return clarification("Which two different locations should the package go between, and should its priority be normal or urgent?", "typesafe", result.model, result.latencyMs);
       commands = [{ type: "create-package", from, to, priority: result.choices.priority === "urgent" ? "urgent" : "normal" }];
+      break;
+    }
+    case "dispatch_delivery": {
+      const pairs = explicitEntityPairs(context.text).map(({ left, right }) => ({
+        from: exactMentions(left, mapEntries),
+        to: exactMentions(right, mapEntries),
+      }));
+      const pair = pairs.length === 1 ? pairs[0] : undefined;
+      const from = pair?.from.length === 1 ? pair.from[0] : undefined;
+      const to = pair?.to.length === 1 ? pair.to[0] : undefined;
+      if (!from || !to || from === to) return clarification("Which two different locations should this delivery travel between?", "typesafe", result.model, result.latencyMs);
+      commands = [{
+        type: "dispatch-delivery",
+        from,
+        to,
+        priority: result.choices.priority === "urgent" ? "urgent" : "normal",
+        courierId: null,
+      }];
       break;
     }
     case "set_priority":
@@ -496,16 +715,21 @@ async function proposeWithJev(context: z.infer<typeof commandRequestSchema>): Pr
       commands = [{ type: "set-priority", packageId: mentionedPackages[0], priority: result.choices.priority as "normal" | "urgent" }];
       break;
     case "set_road":
-      if (mentionedRoads.length !== 1 || !["open", "closed"].includes(result.choices.road_state)) return clarification("Which road should change, and should it be open or closed?", "typesafe", result.model, result.latencyMs);
-      commands = [{ type: "set-road", roadId: mentionedRoads[0], closed: result.choices.road_state === "closed" }];
+      if (mentionedRoads.ambiguous || mentionedRoads.roadIds.length !== 1 || !["open", "closed"].includes(result.choices.road_state)) return clarification("Which road should change, and should it be open or closed? Name a road ID or one unambiguous pair of endpoints.", "typesafe", result.model, result.latencyMs);
+      commands = [{ type: "set-road", roadId: mentionedRoads.roadIds[0], closed: result.choices.road_state === "closed" }];
       break;
     case "assign_package":
       if (mentionedPackages.length !== 1 || mentionedCouriers.length !== 1) return clarification("Which existing package should be assigned to which courier?", "typesafe", result.model, result.latencyMs);
       commands = [{ type: "assign-package", packageId: mentionedPackages[0], courierId: mentionedCouriers[0] }];
       break;
+    case "delegate_to_codex":
+      return clarification("This request needs a compound plan; use automatic mode to route it to the planner.", "typesafe", result.model, result.latencyMs);
     default:
       return clarification("Please clarify the requested operation.", "typesafe", result.model, result.latencyMs);
   }
+  const courierResolution = resolveDispatchCouriers(commands, context);
+  if (courierResolution.error) return clarification(courierResolution.error, "typesafe", result.model, result.latencyMs);
+  commands = courierResolution.commands;
   const error = validateProposedCommands(commands, context);
   return error ? clarification(error, "typesafe", result.model, result.latencyMs) : { commands, clarification: null, provider: "typesafe", model: result.model, latencyMs: result.latencyMs };
 }
@@ -514,20 +738,28 @@ function codexCommandPrompt(context: z.infer<typeof commandRequestSchema>): stri
   return [
     "Return a proposal matching the JSON schema. Never execute it or modify the supplied state.",
     "Interpret the request against only the listed entities. Do not invent IDs, assign a future package ID, or choose paths, routes, or difficulty.",
+    "For dispatch-delivery, use only two explicitly named existing locations. Set priority to normal when the user does not state one. Set courierId to null; server code resolves an explicitly named courier or selects an available courier. Never create or assign a future package ID.",
+    "For a newly requested create-and-dispatch delivery, use one dispatch-delivery command. Never create a package and invent its future ID for a separate assign-package command.",
     "The `commands` array may contain multiple directly requested, unambiguous commands. If an entity or meaning is ambiguous, return an empty array and ask one concise question in `clarification`.",
-    "For create-package, use only explicitly named existing locations and the requested priority (normal if explicitly normal; urgent if explicitly urgent). For a compound create-and-assign request, use it only if the user explicitly identifies an existing package, otherwise ask for clarification.",
+    "For create-package, use only explicitly named existing locations and the requested priority (normal if explicitly normal; urgent if explicitly urgent). Use assign-package only for an existing package the user identifies. For a new delivery, use dispatch-delivery instead.",
     `Request: ${JSON.stringify(context.text)}`,
     `Available map, packages, and couriers: ${JSON.stringify({ map: context.map, packages: context.packages.map(({ id, from, to, priority, status, courierId }) => ({ id, from, to, priority, status, courierId })), couriers: context.couriers.map(({ id, name, locationId, packageIds, capacity }) => ({ id, name, locationId, packageIds, capacity })) })}`,
   ].join("\n");
 }
 
-async function proposeWithCodex(context: z.infer<typeof commandRequestSchema>): Promise<CommandProposal> {
-  const result = await runCodexJson({ prompt: codexCommandPrompt(context), schema: commandProposalJsonSchema });
+async function proposeWithCodex(
+  context: z.infer<typeof commandRequestSchema>,
+  run: typeof runCodexJson = runCodexJson,
+): Promise<CommandProposal> {
+  const result = await run({ prompt: codexCommandPrompt(context), schema: commandProposalJsonSchema });
   const parsed = commandProposalSchema.safeParse(result.value);
   if (!parsed.success) throw new ApiError(502, "provider_invalid_response");
-  const entityError = validateProposedCommands(parsed.data.commands, context);
+  const courierResolution = resolveDispatchCouriers(parsed.data.commands, context);
+  if (courierResolution.error) return clarification(courierResolution.error, "codex", result.model, result.latencyMs);
+  const commands = courierResolution.commands;
+  const entityError = validateProposedCommands(commands, context);
   if (entityError) return clarification(entityError, "codex", result.model, result.latencyMs);
-  return { ...parsed.data, provider: "codex", model: result.model, latencyMs: result.latencyMs };
+  return { ...parsed.data, commands, provider: "codex", model: result.model, latencyMs: result.latencyMs };
 }
 
 async function callOpenAi(options: { model: string; system: string; user: string; schemaName: string; schema: unknown; image?: string }): Promise<{ value: unknown; model: string; latencyMs: number }> {
@@ -597,16 +829,47 @@ async function proposeWithOpenAiApi(context: z.infer<typeof commandRequestSchema
   });
   const parsed = commandProposalSchema.safeParse(result.value);
   if (!parsed.success) throw new ApiError(502, "provider_invalid_response");
-  const entityError = validateProposedCommands(parsed.data.commands, context);
+  const courierResolution = resolveDispatchCouriers(parsed.data.commands, context);
+  if (courierResolution.error) return clarification(courierResolution.error, "openai", result.model, result.latencyMs);
+  const commands = courierResolution.commands;
+  const entityError = validateProposedCommands(commands, context);
   if (entityError) return clarification(entityError, "openai", result.model, result.latencyMs);
-  return { ...parsed.data, provider: "openai", model: result.model, latencyMs: result.latencyMs };
+  return { ...parsed.data, commands, provider: "openai", model: result.model, latencyMs: result.latencyMs };
 }
 
-export async function proposeCommand(input: unknown): Promise<CommandProposal> {
+type AutoProposalTestHooks = {
+  classify?: typeof callTypeSafeDecision;
+  runCodex?: typeof runCodexJson;
+};
+
+async function proposeWithAuto(
+  context: z.infer<typeof commandRequestSchema>,
+  hooks: AutoProposalTestHooks = {},
+): Promise<CommandProposal> {
+  const routeStarted = performance.now();
+  if (!hooks.classify && !process.env.TYPESAFE_API_KEY) {
+    return apiEnabled() ? proposeWithOpenAiApi(context) : proposeWithCodex(context, hooks.runCodex);
+  }
+  const decision = await (hooks.classify ?? callTypeSafeDecision)(context.text, context);
+  const routeMetadata = {
+    routedBy: "typesafe" as const,
+    routeCategory: decision.choices.operation as NonNullable<CommandProposal["routeCategory"]>,
+    routerLatencyMs: decision.latencyMs,
+  };
+  if (decision.choices.operation === "delegate_to_codex" && decision.confidence >= 0.68) {
+    const proposal = apiEnabled() ? await proposeWithOpenAiApi(context) : await proposeWithCodex(context, hooks.runCodex);
+    return { ...proposal, ...routeMetadata, latencyMs: Math.round(performance.now() - routeStarted) };
+  }
+  const proposal = await proposeWithJev(context, decision);
+  return { ...proposal, ...routeMetadata };
+}
+
+export async function proposeCommand(input: unknown, autoTestHooks?: AutoProposalTestHooks): Promise<CommandProposal> {
   const parsed = commandRequestSchema.safeParse(input);
   if (!parsed.success) throw new ApiError(400, "invalid_command_request");
   if (parsed.data.mode === "jev") return proposeWithJev(parsed.data);
-  return apiEnabled() ? proposeWithOpenAiApi(parsed.data) : proposeWithCodex(parsed.data);
+  if (parsed.data.mode === "openai") return apiEnabled() ? proposeWithOpenAiApi(parsed.data) : proposeWithCodex(parsed.data);
+  return proposeWithAuto(parsed.data, autoTestHooks);
 }
 
 async function isCodexReady(): Promise<boolean> {
