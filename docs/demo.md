@@ -1,13 +1,31 @@
-# Three-minute demo
+# Rehearse the Paperworld demo
 
-1. Start `npm run dev`, open http://127.0.0.1:3000 and pause the labeled sample. Inspect a courier, then create and assign a delivery manually to see physical movement.
-2. Draw a fresh map with clearly named DEPOT, JUNCTION, HOME and SHOP stops, each with a stable letter ID. Join the depot to the junction, then join the junction to home and shop. Upload the photo, choose **Read paper map**, correct the proposal, and choose **Apply & start this world**.
-3. Create a delivery from the depot to home and assign it to a courier. Play briefly, then pause while the courier is on the depot–junction road.
-4. Mark the junction–home road with a red X. Upload the revised drawing and rescan. Check the proposed closure before applying. The courier must keep its position, finish its current segment, and report an unreachable destination.
-5. Draw a new shop–home road, keeping every location ID unchanged. Upload, rescan and apply. The same delivery resumes via the shop and completes only after physical arrival at home.
-6. Before it finishes, make that package urgent using the manual priority control or text `Set package pkg-1 to urgent`. Review and apply the model proposal. Show the measured model latency and priority-change event.
-7. In compound mode, request a priority change and road closure together using the visible package/road IDs. Review the constrained command list. Try an ambiguous target to demonstrate clarification without a state change.
+## Prepare
 
-Pause/step/speed controls let you make every transition visible. Voice is optional: dictate, edit the transcript, then submit it deliberately. Browser/device permissions may require manual approval.
+Start `npm run dev` and open http://127.0.0.1:3000. Keep the existing local `.env`. The labeled sample starts paused. For a repeatable raster rehearsal, use `/demo/initial.png`, `/demo/blocked.png`, and `/demo/reconnected.png`; save those files and upload them in that order. For the real paper demo, use your own drawing and camera or upload.
 
-The reproducible fresh raster drawing acceptance and its precise results are recorded in [acceptance evidence](acceptance.md). A successful synthetic drawing test does not prove physical webcam capture or voice transcription on every device.
+## Draw → scan → confirm
+
+Draw four clearly labeled stops with stable IDs: DEPOT D, JUNCTION J, HOME H, and SHOP S. Connect D–J, J–H, and J–S. Do not connect S–H yet. Choose **Upload photo** or **Use camera** → **Capture frame**, then **Read paper map**. Review the proposal and choose **Confirm map**. Correct any transcription before confirming.
+
+Choose **Start deliveries**. This creates clearly labeled demo packages from the scanned map and dispatches two couriers; no manual package setup is needed. Playback begins at 0.25× demo speed. Choose **Pause** after about four real seconds, before the home delivery completes. Open **Playback controls** and use **Step 1 second** when you need a precise moment.
+
+## Change the paper → rescan → recover
+
+Mark the J–H road with a red X. Keep all stop IDs unchanged. Upload or capture the revised drawing, choose **Read paper map**, and choose **Confirm changes** after reviewing the closure. The same couriers and packages keep their positions and progress. Playback stays paused. Step until the courier reaches the junction: a courier already on a road finishes that segment; the unreachable home delivery then waits. Click that courier to see its package, destination, and waiting reason.
+
+Before recovery, enter **Set package pkg-1 to urgent** using the actual package ID displayed in your run. Choose **Review command**, check the proposal, then **Confirm and apply**. The app chooses the supported provider category automatically and shows actual request latency.
+
+Draw a new S–H road while leaving J–H closed. Upload, choose **Read paper map**, and **Confirm changes**. Watch the changed road and replacement route. Optionally set **Playback controls** → **Speed** → **1×**, then choose **Resume**. Changing speed alone does not resume playback. The same stranded package must reach home physically and complete once. Open **Run details** for package IDs and completion events.
+
+## Voice/text instruction
+
+Enter **Send an urgent delivery from Depot to Shop**, using the actual visible stop names. One reviewed request creates and dispatches a delivery; code allocates its package ID and checks courier capacity. A compound instruction uses Codex; a supported narrow operation uses Jev. No difficulty guess controls routing.
+
+If voice is supported, choose **Dictate**, speak the same instruction, edit the transcript, and choose **Review command** deliberately. Try **Send a delivery from Depot** to demonstrate clarification for the missing destination without a state change. To rehearse again on the confirmed map, choose **Playback controls** → **Reset run**, then **Start deliveries**. Restore the initial road layout first if you want the same closure sequence.
+
+Manual dispatch, provider diagnostics, history, and detailed map editing are available in secondary panels. They are useful recovery tools, not required demo setup.
+
+## What the rehearsal proves
+
+Generated PNG rehearsal tests real image inference, reviewed map updates, deterministic movement, command validation, and the recovery loop. It does not establish arbitrary handwriting recognition or physical camera/microphone operation. Those require a device rehearsal with your own drawing. See [verification](polish-verification.md) for the performed checks and remaining limits.
