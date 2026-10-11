@@ -35,13 +35,13 @@ Use clearly labeled stops: write a stable short ID and a name beside each **DEPO
 
 Upload PNG, JPEG or WebP up to 1.5 MB, or capture a webcam frame. Nothing is sent to a model until you choose **Read paper map**. Review and correct the proposed locations and roads before applying. The first drawing starts a fresh world; later rescans preserve courier and package state. Coordinates of matched existing locations stay fixed, so photo perspective drift cannot move a courier. Removing or moving a location referenced by simulation state is rejected. Model transcription can be wrong; manual correction is part of the workflow.
 
-Create a package between two different stops and assign it to a courier. Change priority to urgent to change the courier's next task. A courier already on a road finishes its pinned physical segment even if that road closes or disappears, then reroutes. If its destination becomes unreachable it waits; a new connecting road can resume the same delivery. Only physical arrival completes a delivery.
+After confirming the first map, choose **Start deliveries**. Code creates two clearly labeled demo deliveries from reachable stops on that actual map and dispatches two couriers. Rescans preserve these packages and their physical progress. Manual dispatch is optional in a secondary panel. Change priority to urgent to change the courier's next task. A courier already on a road finishes its pinned physical segment even if that road closes or disappears, then reroutes. If its destination becomes unreachable it waits; a new connecting road can resume the same delivery. Only physical arrival completes a delivery.
 
 ## Providers and privacy
 
 Default: the official installed Codex CLI reuses its supported local ChatGPT sign-in. Paperworld never reads login tokens. Each inference runs in an isolated temporary directory, with shell/patch/web tools disabled, saved configuration ignored, a strict output schema and time/byte limits. API credentials are excluded from its child environment. Temporary images/results are cleaned after calls.
 
-Jev uses the [official TypeSafe API](https://docs.typesafe.ai/api) for fixed intent/priority choices. Code validates targets and applies commands atomically; Jev does not perform arithmetic, routing or difficulty judgments. Select compound-command mode to use OpenAI through Codex. No model calls run on animation frames. Model latency is measured on each request.
+Jev uses the [official TypeSafe API](https://docs.typesafe.ai/api) for fixed intent/priority choices. Code validates targets and applies commands atomically; Jev does not perform arithmetic, routing or difficulty judgments. The main command bar routes supported task categories automatically: Jev handles narrow operations; Codex handles compound instructions. Routing does not estimate difficulty. A typed create-and-dispatch operation lets code allocate package IDs and validate capacity in one reviewed request. No model calls run on animation frames. Model latency is measured on each request.
 
 **Localhost-only does not mean offline inference:** selected images and command context are sent to the chosen provider. Browser speech recognition may use your browser vendor's online transcription service; voice is opt-in, and the transcript is editable before submission. Camera/voice depend on browser permission and device support. Neither personal photos nor simulation state are persisted in a database.
 
@@ -51,7 +51,7 @@ The optional paid OpenAI Responses adapter requires both `PAPERWORLD_OPENAI_PROV
 
 ## Verification and demo
 
-See [provider evidence](docs/provider-smoke.md), [acceptance evidence](docs/acceptance.md) and [demo script](docs/demo.md). Automated tests cover deterministic movement, closure and rescan continuity, capacity, priority, unreachable recovery and atomic invalid actions.
+See [provider evidence](docs/provider-smoke.md), [acceptance evidence](docs/acceptance.md), [polish verification](docs/polish-verification.md) and [demo script](docs/demo.md). Automated tests cover deterministic movement, closure and rescan continuity, capacity, priority, unreachable recovery and atomic invalid actions.
 
 Official integration references: [Codex non-interactive output schemas](https://developers.openai.com/codex/noninteractive), [Codex authentication](https://developers.openai.com/codex/auth), [TypeSafe HTTP contract](https://docs.typesafe.ai/api).
 

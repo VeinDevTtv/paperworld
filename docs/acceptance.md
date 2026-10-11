@@ -14,9 +14,11 @@ Run date: 2026-10-11. Result: passed.
 
 | Stage | Provider/model | Raster size | Latency | Parsed graph |
 | --- | --- | ---: | ---: | --- |
-| Initial | Codex / codex-chatgpt | 36,831 bytes | 7,421 ms | 4 locations, 3 roads |
-| Blocked | Codex / codex-chatgpt | 37,265 bytes | 7,351 ms | 4 locations, 3 roads |
-| Reconnected | Codex / codex-chatgpt | 41,132 bytes | 7,664 ms | 4 locations, 4 roads |
+| Initial | Codex / default, not reported | 36,831 bytes | 7,421 ms | 4 locations, 3 roads |
+| Blocked | Codex / default, not reported | 37,265 bytes | 7,351 ms | 4 locations, 3 roads |
+| Reconnected | Codex / default, not reported | 41,132 bytes | 7,664 ms | 4 locations, 4 roads |
+
+The CLI did not report the exact model ID in these runs. The previous `codex-chatgpt` value was an adapter label, not a verified model ID; no model ID was supplied to the CLI.
 
 All scans required human review as expected for image interpretation, and the reconciliation pass returned no review reasons. The acceptance checked stable location IDs and coordinates across scans, preserved road identity on the closure, and detected the new shop-to-home edge.
 
@@ -24,7 +26,7 @@ The simulation created and assigned pkg-1 from the depot to the home. The courie
 
 JEv (jev-1.13.0) proposed urgent priority for pkg-1 in 250 ms; the proposal was applied. After the third scan added the shop-to-home road, the package resumed as in transit and was physically delivered. The simulation completed in 13.617 seconds with 133.965 distance traveled, and recorded exactly one delivery event.
 
-An ambiguous JEv request with two existing packages returned a clarification in 149 ms, with no commands applied. Local Codex (codex-chatgpt) handled mode openai while paid API mode was disabled: with two existing packages and a valid road, it returned set-priority and set-road commands in 5,137 ms. Both commands passed validation and were applied to a scratch simulation.
+An ambiguous JEv request with two existing packages returned a clarification in 149 ms, with no commands applied. Local Codex (default model, not reported) handled mode openai while paid API mode was disabled: with two existing packages and a valid road, it returned set-priority and set-road commands in 5,137 ms. Both commands passed validation and were applied to a scratch simulation.
 
 The fixtures are clean, generated raster maps. This run verifies the parser and workflow with these drawings; it does not establish webcam capture, user-upload behavior, or recognition of arbitrary handwriting.
 
