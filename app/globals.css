@@ -3590,3 +3590,7 @@ p {
   .demo-start-panel { align-items: stretch; flex-direction: column; }
   .demo-start-button { width: 100%; }
 }
+
+.world-mini-metrics { display: flex; gap: 14px; color: var(--muted); font-size: 11px; margin-top: 5px; }
+.world-mini-metrics strong { margin-left: 4px; color: inherit; font-variant-numeric: tabular-nums; }
+.delivery-feedback { min-height: 18px; font-size: 12px; color: #287047; margin-bottom: 4px; }

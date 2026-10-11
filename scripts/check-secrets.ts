@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFile, stat } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { loadEnvConfig } from "@next/env";
 
@@ -31,6 +31,12 @@ async function main(): Promise<void> {
     .filter(([name, value]) => exactSecretNames.test(name) && typeof value === "string" && value.length >= 8 && !isPlaceholder(value))
     .map(([, value]) => Buffer.from(value as string, "utf8"));
   const paths = repoPaths();
+  if (process.argv.includes("--browser")) {
+    const browserRoot = path.join(root, ".next", "static");
+    const assets = await readdir(browserRoot, { recursive: true });
+    for (const asset of assets) paths.push(path.join(".next", "static", asset));
+    console.log("Including built browser assets in the secret scan.");
+  }
   const failures: Array<{ file: string; code: string }> = [];
   let scanned = 0;
 

@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
+import { preparePhoto } from "../lib/prepare-photo";
 import { paperMapSchema, type Location, type PaperMap } from "../lib/schema";
 
-const MAX_IMAGE_BYTES = 1_500_000;
+
 const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 const parseResponseSchema = z.object({
@@ -210,18 +211,13 @@ export function PaperworkPanel({ previousMap, startsNewWorld, mapRevision, pinne
       setImageError("Choose a PNG, JPEG, or WebP image.");
       return;
     }
-    if (nextFile.size > MAX_IMAGE_BYTES) {
-      setIsPreparing(false);
-      setImageError(`This image is ${formatBytes(nextFile.size)}. The 1.5 MB limit is required for scanning. Choose a smaller image or capture a new frame.`);
-      return;
-    }
-
     try {
-      const dataUrl = await readDataUrl(nextFile);
+      const preparedFile = await preparePhoto(nextFile);
+      const dataUrl = await readDataUrl(preparedFile);
       if (readRevision !== fileReadRevision.current) return;
-      setFile(nextFile);
+      setFile(preparedFile);
       setImageData(dataUrl);
-      setPreviewUrl(URL.createObjectURL(nextFile));
+      setPreviewUrl(URL.createObjectURL(preparedFile));
     } catch (error) {
       if (readRevision !== fileReadRevision.current) return;
       setImageError(getErrorMessage(error, "The selected image could not be read."));

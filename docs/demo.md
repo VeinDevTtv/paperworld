@@ -2,6 +2,8 @@
 
 ## Prepare
 
+For production rehearsal: `npm run build`, then `npm run start` from the project folder. Open http://127.0.0.1:3000. Stop any existing server on that port first. Preserve your existing `.env`. Development remains `npm run dev`; both bind only to loopback. Do not run two servers on the same port.
+
 Start `npm run dev` and open http://127.0.0.1:3000. Keep the existing local `.env`. The labeled sample starts paused. For a repeatable raster rehearsal, use `/demo/initial.png`, `/demo/blocked.png`, and `/demo/reconnected.png`; save those files and upload them in that order. For the real paper demo, use your own drawing and camera or upload.
 
 ## Draw → scan → confirm
@@ -20,6 +22,8 @@ Draw a new S–H road while leaving J–H closed. Upload, choose **Read paper ma
 
 ## Voice/text instruction
 
+Dictation shows starting → listening → processing → stopped, or an error. Speak only when Listening appears. Network failure may come from your browser's speech service: keep/edit the transcript, choose Retry dictation, or type it. Microphone denial requires allowing access in browser site settings. Voice never applies actions automatically. If Jev command review fails, Retry uses the current world; Use Codex explicitly requests the subscription provider and still requires confirmation.
+
 Enter **Send an urgent delivery from Depot to Shop**, using the actual visible stop names. One reviewed request creates and dispatches a delivery; code allocates its package ID and checks courier capacity. A compound instruction uses Codex; a supported narrow operation uses Jev. No difficulty guess controls routing.
 
 If voice is supported, choose **Dictate**, speak the same instruction, edit the transcript, and choose **Review command** deliberately. Try **Send a delivery from Depot** to demonstrate clarification for the missing destination without a state change. To rehearse again on the confirmed map, choose **Playback controls** → **Reset run**, then **Start deliveries**. Restore the initial road layout first if you want the same closure sequence.
@@ -27,5 +31,7 @@ If voice is supported, choose **Dictate**, speak the same instruction, edit the 
 Manual dispatch, provider diagnostics, history, and detailed map editing are available in secondary panels. They are useful recovery tools, not required demo setup.
 
 ## What the rehearsal proves
+
+Large supported photos are compressed locally before scanning; check that labels are upright/readable in the preview. For reproducible rotated-photo tests run `npx tsx scripts/photo-fixtures.ts` and upload the JPEGs from `.local/photo-fixtures` in initial/blocked/recovered order. These are synthetic images. A new-home variant adds N connected to Shop; review all road changes. For physical camera repositioning, move the camera while preserving stop IDs, rescan, and verify existing package IDs/positions/progress remain unchanged. Report failures rather than correcting the evidence after the fact.
 
 Generated PNG rehearsal tests real image inference, reviewed map updates, deterministic movement, command validation, and the recovery loop. It does not establish arbitrary handwriting recognition or physical camera/microphone operation. Those require a device rehearsal with your own drawing. See [verification](polish-verification.md) for the performed checks and remaining limits.

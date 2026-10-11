@@ -1,0 +1,31 @@
+# Reliability release evidence — 2026-10-11
+
+This extends the previous integrated baseline bfdc341. Root integrates; compound agent owns server/providers.ts/tests/providers.test.ts; input agent owns input components/photo helper/test/generator; separate read-only reviewer approves logic, input lifecycle and benchmark. No paid API adapter calls, new infrastructure or public deployment.
+
+## Live browser run (development build, native Ravylo preview)
+
+Generated EXIF6 JPEG initial source 1,789,490 bytes was compressed locally to 636 KB, decoded upright 2286×3200. A browser canvas preview of the selected image was visually inspected: ORIENTATION: TOP was upright and Depot D/Junction J/Home H/Shop S were readable. This inspects image pixels, not the whole UI screenshot. Live Codex parsed four stops/three roads in 8,060 ms.
+
+Confirmed map → Start deliveries; reset once because the first pause occurred after couriers entered the home/shop branches. Restart with a timed early pause. Closure input compressed to646 KB, live Codex7,294 ms. Confirm changes preserved both transforms exactly at `translate(500 178.268)`. After three one-second steps Mina waited at Junction with pkg-1; inspector showed Depot D→Home H and “No open route to destination; package is waiting.” Waiting counter1 and CHANGED road label appeared.
+
+Live Jev priority proposal145 ms, model jev-1.13.0; confirmed pkg-1 urgent. Recovery image651 KB, Codex9,754 ms, four stops/four roads. Both positions preserved exactly: Mina `translate(500 301.808)`; Rook `translate(523.2295271690523 311.56580926113344)`. “pkg-1 - Route restored” appeared. Twelve one-second steps delivered the same urgent pkg-1 once at0:13, pkg-2 at0:06. Delivered2, Waiting0. No model calls on steps.
+
+Synthetic new-home photo651 KB parsed five stops/four roads in8,072 ms. It was based on the initial network plus S–N, so replacing the recovered map correctly raised `previous_roads_not_confidently_matched`; proposal was reviewed before confirmation. Live Jev119 ms created/dispatched urgent pkg-3 Depot D→New Home N. Double confirmation in one browser task created exactly one package: total3. Twenty-five steps completed pkg-3 at0:31; “Delivery complete” appeared.
+
+## Resilience and speech (mocked browser input, live recovery)
+
+Mock recognition showed Listening, Processing, Error after network failure; transcript stayed editable and package count stayed3. Retry started a new session; old onend did not stop it. A double form submission under a mocked Jev502 made one request, no simulation change, and visible Retry/Use Codex. Explicit Use Codex sent mode=codex, with live subscription proposal4,420 ms; confirmed urgent pkg-4 Depot D→Shop S completed at0:56. This is mocked transcription plus real command inference, not microphone validation.
+
+Unit/provider regressions include open-road→dispatch, close-road→dispatch, existing assignment→dispatch, capacity/rollback, occupied-segment continuity; network/429/timeout failures never invoke silent fallback. Explicit Codex and auto compound stay subscription-only even when paid flags exist. Available Jev/router usage is retained.
+
+## Provider reliability
+
+See benchmark.md and raw outcomes. Earlier paired runs had provider failures; isolated diagnostics identified intermittent strict-schema400 rejection of const-only command discriminators. Typed singleton enums fixed that boundary; final paired24/24 outcomes passed. A separate post-fix isolated probe still timed out at75,066 ms (7/8 valid). Provider uptime is not guaranteed; timeout/retry feedback remains necessary.
+
+## Gate and device limits
+
+47 tests/typecheck/build/source and built-browser secret checks passed during integration; final commit checks and production browser evidence are tracked in RELEASE_CHECKLIST.md. No loaded credential values printed or found in scanned browser assets.
+
+One full baseline screenshot was captured/inspected at1280×800 before edits. Later native snapshot/click/recording calls intermittently timed out or failed PreviewAutomationExecutionError; evaluate and type remained available. Do not claim final visual approval or a backup recording from failed capture attempts. DOM/no-overflow checks are not visual approval.
+
+User physically reported “Speech recognition stopped (network).” Browser/device unspecified; no successful physical retest yet. Handwriting, physical webcam, camera repositioning and educator novice feedback remain requested and unverified. Generated EXIF images/new home establish synthetic scan behavior only. Paid API adapter disabled and untested without billing authorization.

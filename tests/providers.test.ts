@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { paperMapSchema } from "../lib/schema";
+import { applyCommands, createSimulation, getCourierPosition, tick } from "../lib/simulation";
 import { ApiError } from "../server/security";
 import { parseMapImage, proposeCommand, reconcileMap } from "../server/providers";
 
@@ -38,6 +39,55 @@ const map = paperMapSchema.parse({
 });
 const courier = { id: "bike-1", name: "Mina", locationId: "A", segment: null, packageIds: [], capacity: 2 };
 const operationChoices = ["create_package", "dispatch_delivery", "set_priority", "set_road", "assign_package", "delegate_to_codex", "clarify"];
+
+test("compound dispatch uses preceding road changes and assignments, with atomic rollback", async () => {
+  const dispatch = { type: "dispatch-delivery" as const, from: "A", to: "B", priority: "normal" as const, courierId: null };
+  const queued = { id: "pkg-9", from: "A", to: "B", priority: "normal" as const, status: "queued" as const, pickedUp: false, courierId: null, createdOrder: 1 };
+  const cases = [
+    { name: "open then dispatch", closed: true, packages: [], commands: [{ type: "set-road" as const, roadId: "A-B", closed: false }, dispatch], accepted: true },
+    { name: "close then dispatch", closed: false, packages: [], commands: [{ type: "set-road" as const, roadId: "A-B", closed: true }, dispatch], accepted: false },
+    { name: "assignment consumes capacity", closed: false, packages: [queued], commands: [{ type: "assign-package" as const, packageId: "pkg-9", courierId: "bike-1" }, dispatch], accepted: true },
+    { name: "assignment fills fleet", closed: false, packages: [queued], commands: [{ type: "assign-package" as const, packageId: "pkg-9", courierId: "bike-1" }, dispatch, dispatch], accepted: false },
+  ];
+  for (const scenario of cases) {
+    const scenarioMap = { ...map, roads: [{ ...map.roads[0], closed: scenario.closed }] };
+    const couriers = [{ ...courier, capacity: 1 }, { ...courier, id: "bike-2", name: "Rook", capacity: 1 }];
+    const prefix = scenario.packages.length ? "Assign pkg-9 to Mina" : `${scenario.closed ? "Open" : "Close"} road A-B`;
+    const text = `${prefix} then dispatch a delivery from Depot to Home${scenario.commands.length > 2 ? " and dispatch another delivery from Depot to Home" : ""}`;
+    const context = { text, map: scenarioMap, packages: scenario.packages, couriers };
+    const before = structuredClone(context);
+    const proposal = await proposeCommand(context, {
+      classify: async () => ({ choices: { operation: "delegate_to_codex", priority: "unspecified", road_state: "unspecified" }, confidence: 1, model: "mock-router", latencyMs: 1 }),
+      runCodex: async () => ({ value: { commands: scenario.commands, clarification: null }, model: "mock-planner", latencyMs: 1 }),
+    });
+    assert.equal(proposal.clarification === null, scenario.accepted, `${scenario.name}: ${proposal.clarification}`);
+    assert.deepEqual(context, before, `${scenario.name} must not mutate request state`);
+    if (scenario.name === "assignment consumes capacity") assert.equal(proposal.commands[1].type === "dispatch-delivery" && proposal.commands[1].courierId, "bike-2");
+    const state = { ...createSimulation(scenarioMap, couriers), packages: scenario.packages };
+    const applied = applyCommands(state, scenario.accepted ? proposal.commands : scenario.commands);
+    assert.equal(applied.accepted, scenario.accepted, scenario.name);
+    if (!applied.accepted) assert.strictEqual(applied.state, state, "whole batch rolls back");
+    else assert.equal(applied.state.packages.at(-1)?.id, "pkg-1", "IDs remain owned by simulation");
+  }
+});
+
+test("compound proposals preserve occupied-segment position and package progress", async () => {
+  const assigned = applyCommands(createSimulation(map, [courier]), [{ type: "dispatch-delivery", from: "A", to: "B", priority: "normal", courierId: "bike-1" }]);
+  assert.ok(assigned.accepted);
+  const state = tick(assigned.state, 2);
+  const position = getCourierPosition(state, "bike-1");
+  const proposal = await proposeCommand({ text: "Set pkg-1 urgent and close road A-B", map: state.map, packages: state.packages, couriers: state.couriers }, {
+    classify: async () => ({ choices: { operation: "delegate_to_codex", priority: "urgent", road_state: "closed" }, confidence: 1, model: "mock-router", latencyMs: 1 }),
+    runCodex: async () => ({ value: { commands: [{ type: "set-priority", packageId: "pkg-1", priority: "urgent" }, { type: "set-road", roadId: "A-B", closed: true }], clarification: null }, model: "mock-planner", latencyMs: 1 }),
+  });
+  assert.equal(proposal.clarification, null);
+  const applied = applyCommands(state, proposal.commands);
+  assert.ok(applied.accepted);
+  assert.deepEqual(getCourierPosition(applied.state, "bike-1"), position);
+  assert.deepEqual(applied.state.couriers[0].segment, state.couriers[0].segment);
+  assert.equal(applied.state.packages[0].id, state.packages[0].id);
+  assert.equal(applied.state.packages[0].pickedUp, state.packages[0].pickedUp);
+});
 
 function typeSafeAnswer(choice: string, choices: string[]) {
   return {
@@ -97,6 +147,38 @@ function typeSafeDecision(operation: string, priority = "unspecified", roadState
   };
 }
 
+test("explicit Codex and automatic compound routing never silently invoke paid API", async () => {
+  const envNames = ["PAPERWORLD_OPENAI_PROVIDER", "PAPERWORLD_ALLOW_PAID_API"];
+  const previous = envNames.map((name) => process.env[name]);
+  process.env.PAPERWORLD_OPENAI_PROVIDER = "api";
+  process.env.PAPERWORLD_ALLOW_PAID_API = "true";
+  let codexCalls = 0;
+  try {
+    for (const mode of ["codex", "auto"]) {
+      const proposal = await proposeCommand({ text: "Close road A-B", map, packages: [], couriers: [courier], mode }, {
+        classify: async () => ({ choices: { operation: "delegate_to_codex", priority: "unspecified", road_state: "closed" }, confidence: 1, model: "mock-router", latencyMs: 1, usage: { input_tokens: 25, output_tokens: 5 } }),
+        runCodex: async ({ schema }) => {
+          const outputSchema = schema as { properties: { commands: { items: { anyOf: Array<{ properties: { type: { type?: string; enum?: string[] } } }> } } } };
+          for (const branch of outputSchema.properties.commands.items.anyOf) {
+            assert.equal(branch.properties.type.type, "string", "strict provider schemas require explicitly typed discriminators");
+            assert.equal(branch.properties.type.enum?.length, 1);
+          }
+          codexCalls += 1;
+          return { value: { commands: [{ type: "set-road", roadId: "A-B", closed: true }], clarification: null }, model: "mock-codex", latencyMs: 1 };
+        },
+      });
+      assert.equal(proposal.provider, "codex");
+      if (mode === "auto") {
+        assert.equal(proposal.routerModel, "mock-router");
+        assert.deepEqual(proposal.routerUsage, { input_tokens: 25, output_tokens: 5 });
+      }
+    }
+    assert.equal(codexCalls, 2);
+  } finally {
+    envNames.forEach((name, index) => { if (previous[index] === undefined) delete process.env[name]; else process.env[name] = previous[index]; });
+  }
+});
+
 test("Jev malformed priority labels fail closed instead of defaulting to normal", async () => {
   const response = {
     model: "jev-test",
@@ -112,6 +194,31 @@ test("Jev malformed priority labels fail closed instead of defaulting to normal"
       (error) => error instanceof ApiError && error.code === "typesafe_invalid_response",
     );
   });
+});
+
+test("Jev network, timeout, and rate-limit failures preserve state and never invoke fallback", async () => {
+  const savedFetch = globalThis.fetch;
+  const savedKey = process.env.TYPESAFE_API_KEY;
+  process.env.TYPESAFE_API_KEY = "test-only-key";
+  try {
+    for (const scenario of [
+      { code: "typesafe_request_failed", fetch: async () => { throw new TypeError("network unavailable"); } },
+      { code: "provider_timeout", fetch: async () => { throw new DOMException("timed out", "TimeoutError"); } },
+      { code: "typesafe_request_failed", fetch: async () => new Response("", { status: 429 }) },
+    ]) {
+      let codexCalls = 0;
+      globalThis.fetch = scenario.fetch as typeof fetch;
+      const context = { text: "Close road A-B", map, packages: [], couriers: [courier] };
+      const before = structuredClone(context);
+      await assert.rejects(proposeCommand(context, { runCodex: async () => { codexCalls += 1; throw new Error("fallback forbidden"); } }),
+        (error) => error instanceof ApiError && error.code === scenario.code);
+      assert.equal(codexCalls, 0);
+      assert.deepEqual(context, before);
+    }
+  } finally {
+    globalThis.fetch = savedFetch;
+    if (savedKey === undefined) delete process.env.TYPESAFE_API_KEY; else process.env.TYPESAFE_API_KEY = savedKey;
+  }
 });
 
 test("Jev probability vectors must match every named choice and total one", async () => {
