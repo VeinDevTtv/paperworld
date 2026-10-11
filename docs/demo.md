@@ -16,7 +16,7 @@ Mark the J–H road with a red X. Keep all stop IDs unchanged. Upload or capture
 
 Before recovery, enter **Set package pkg-1 to urgent** using the actual package ID displayed in your run. Choose **Review command**, check the proposal, then **Confirm and apply**. The app chooses the supported provider category automatically and shows actual request latency.
 
-Draw a new S–H road while leaving J–H closed. Upload, choose **Read paper map**, and **Confirm changes**. Watch the changed road and replacement route, then choose **Resume** or use **Playback controls** → **Speed** → **1×**. The same stranded package must reach home physically and complete once. Open **Run details** for package IDs and completion events.
+Draw a new S–H road while leaving J–H closed. Upload, choose **Read paper map**, and **Confirm changes**. Watch the changed road and replacement route. Optionally set **Playback controls** → **Speed** → **1×**, then choose **Resume**. Changing speed alone does not resume playback. The same stranded package must reach home physically and complete once. Open **Run details** for package IDs and completion events.
 
 ## Voice/text instruction
 
