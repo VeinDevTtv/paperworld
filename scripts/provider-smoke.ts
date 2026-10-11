@@ -164,15 +164,17 @@ function findCodexLauncher(environment: NodeJS.ProcessEnv): { command: string; p
   ].filter(Boolean);
   for (const root of npmRoots) {
     const packageRoot = path.join(root, "@openai", "codex");
-    if (process.platform === "win32" && process.arch === "x64") {
-      const native = path.join(packageRoot, "node_modules", "@openai", "codex-win32-x64", "vendor", "x86_64-pc-windows-msvc", "bin", "codex.exe");
+    if (process.platform === "win32" && (process.arch === "x64" || process.arch === "arm64")) {
+      const packageName = process.arch === "arm64" ? "codex-win32-arm64" : "codex-win32-x64";
+      const triple = process.arch === "arm64" ? "aarch64-pc-windows-msvc" : "x86_64-pc-windows-msvc";
+      const native = path.join(packageRoot, "node_modules", "@openai", packageName, "vendor", triple, "bin", "codex.exe");
       try {
         accessSync(native, fsConstants.X_OK);
         return { command: native, prefixArgs: [] };
       } catch {
         // Check the sibling package layout used by some npm installs.
       }
-      const siblingNative = path.join(root, "@openai", "codex-win32-x64", "vendor", "x86_64-pc-windows-msvc", "bin", "codex.exe");
+      const siblingNative = path.join(root, "@openai", packageName, "vendor", triple, "bin", "codex.exe");
       try {
         accessSync(siblingNative, fsConstants.X_OK);
         return { command: siblingNative, prefixArgs: [] };
@@ -180,16 +182,23 @@ function findCodexLauncher(environment: NodeJS.ProcessEnv): { command: string; p
         // Continue to the configured PATH executable.
       }
     }
-    const entrypoint = path.join(packageRoot, "bin", "codex.js");
-    try {
-      accessSync(entrypoint, fsConstants.R_OK);
-      return { command: process.execPath, prefixArgs: [entrypoint] };
-    } catch {
-      // Keep looking through standard npm global install roots.
+    if (process.platform !== "win32") {
+      const entrypoint = path.join(packageRoot, "bin", "codex.js");
+      try {
+        accessSync(entrypoint, fsConstants.R_OK);
+        return { command: process.execPath, prefixArgs: [entrypoint] };
+      } catch {
+        // Keep looking through standard npm global install roots.
+      }
     }
   }
+  // On Windows the npm shim can spawn a native child that child.kill() will
+  // leave running after a timeout. Require the platform binary instead.
+  if (process.platform === "win32") {
+    throw new Error("Native Codex CLI was not found for this Windows architecture; refusing the npm JavaScript shim.");
+  }
   const pathEntries = (environment.PATH ?? environment.Path ?? "").split(path.delimiter);
-  const names = process.platform === "win32" ? ["codex.exe"] : ["codex"];
+  const names = ["codex"];
   for (const entry of pathEntries) {
     for (const name of names) {
       const candidate = path.join(entry, name);
