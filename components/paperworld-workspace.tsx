@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { captureRoadComparison, runRoadComparison, type RoadComparisonCapture, type RoadComparisonResult } from "../lib/road-comparison";
 import { DeliveryWorld, type RoadChangeKind } from "./delivery-world";
 import { PaperworkPanel } from "./paperwork-panel";
 import { OperationsWorkbench } from "./operations-workbench";
@@ -130,6 +131,10 @@ function packageStatusLabel(status: Package["status"]) {
 export function PaperworldWorkspace() {
   const [simulation, setSimulation] = useState<SimulationState>(createSampleSimulation);
   const simulationRef = useRef(simulation);
+  const [comparisonCapture, setComparisonCapture] = useState<RoadComparisonCapture | null>(null);
+  const [comparisonResult, setComparisonResult] = useState<RoadComparisonResult | null>(null);
+  const [comparisonSide, setComparisonSide] = useState<"withoutChange" | "withChange">("withChange");
+  const renderedSimulation = comparisonResult ? comparisonResult[comparisonSide] : simulation;
   const [deliveryFeedback, setDeliveryFeedback] = useState<string | null>(null);
   const lastEventRef = useRef(0);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -161,6 +166,7 @@ export function PaperworldWorkspace() {
   const resumeAfterPaperworkRef = useRef(false);
 
   const updateSimulation = useCallback((update: (current: SimulationState) => SimulationState) => {
+    setComparisonResult(null);
     const next = update(simulationRef.current);
     simulationRef.current = next;
     setSimulation(next);
@@ -175,21 +181,22 @@ export function PaperworldWorkspace() {
   }, [isPlaying, playbackSpeed, updateSimulation]);
 
   const metrics = useMemo(() => getMetrics(simulation), [simulation]);
+  const renderedMetrics = useMemo(() => getMetrics(renderedSimulation), [renderedSimulation]);
   const locationById = useMemo(
     () => new Map(simulation.map.locations.map((location) => [location.id, location])),
     [simulation.map.locations],
   );
   const courierMarkers = useMemo(() => {
     const allRoadsOpenMap: PaperMap = {
-      locations: simulation.map.locations,
-      roads: simulation.map.roads.map((road) => ({ ...road, closed: false })),
+      locations: renderedSimulation.map.locations,
+      roads: renderedSimulation.map.roads.map((road) => ({ ...road, closed: false })),
     };
-    const locationById = new Map(simulation.map.locations.map((location) => [location.id, location]));
+    const locationById = new Map(renderedSimulation.map.locations.map((location) => [location.id, location]));
 
-    return simulation.couriers.map((courier) => {
-      const position = getCourierPosition(simulation, courier.id);
+    return renderedSimulation.couriers.map((courier) => {
+      const position = getCourierPosition(renderedSimulation, courier.id);
       const assignedPackages = courier.packageIds
-        .map((packageId) => simulation.packages.find((pkg) => pkg.id === packageId))
+        .map((packageId) => renderedSimulation.packages.find((pkg) => pkg.id === packageId))
         .filter((pkg): pkg is Package => pkg !== undefined && pkg.status !== "delivered")
         .sort((left, right) => Number(right.priority === "urgent") - Number(left.priority === "urgent") || left.createdOrder - right.createdOrder);
       const schedulablePackages = assignedPackages.filter((pkg) => pkg.status !== "unreachable");
@@ -197,7 +204,7 @@ export function PaperworldWorkspace() {
       const blockedPackage = assignedPackages.find((pkg) => pkg.status === "unreachable");
       const routeTarget = activePackage ? (activePackage.pickedUp ? activePackage.to : activePackage.from) : null;
       const currentSegmentRoad = courier.segment
-        ? simulation.map.roads.find((road) => road.id === courier.segment?.roadId)
+        ? renderedSimulation.map.roads.find((road) => road.id === courier.segment?.roadId)
         : undefined;
       const currentSegmentRoadMatches = Boolean(
         currentSegmentRoad && courier.segment &&
@@ -206,7 +213,7 @@ export function PaperworldWorkspace() {
       );
       const effectiveLocation = courier.segment?.to ?? courier.locationId;
       const currentRoute = routeTarget && activePackage?.status !== "unreachable"
-        ? shortestPath(simulation.map, effectiveLocation, routeTarget)
+        ? shortestPath(renderedSimulation.map, effectiveLocation, routeTarget)
         : null;
       const unobstructedRoute = routeTarget && activePackage?.status !== "unreachable"
         ? shortestPath(allRoadsOpenMap, effectiveLocation, routeTarget)
@@ -272,7 +279,7 @@ export function PaperworldWorkspace() {
         waitingReason,
       };
     });
-  }, [simulation]);
+  }, [renderedSimulation]);
   const pinnedLocationIds = useMemo(() => {
     const ids = new Set<string>();
     for (const courier of simulation.couriers) {
@@ -298,6 +305,8 @@ export function PaperworldWorkspace() {
   function applyProposedMap(map: PaperMap, startsFreshWorld: boolean) {
     const changes = getRoadChanges(simulationRef.current.map, map);
     if (startsFreshWorld) {
+      setComparisonCapture(null);
+      setComparisonResult(null);
       setWorldBirthRevision((revision) => revision + 1);
       setStartError(null);
       if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
@@ -312,8 +321,10 @@ export function PaperworldWorkspace() {
       return null;
     }
 
-    const result = applyMap(simulationRef.current, map);
+    const before = simulationRef.current;
+    const result = applyMap(before, map);
     if (!result.accepted) return result.error;
+    setComparisonCapture(captureRoadComparison(before, map));
     updateSimulation(() => result.state);
     setRoadChanges(changes);
     setWorldRevision((revision) => revision + 1);
@@ -328,6 +339,7 @@ export function PaperworldWorkspace() {
     updateSimulation(() => result.state);
     setWorldRevision((revision) => revision + 1);
     if (commands.some((command) => command.type === "set-road")) {
+      setComparisonCapture(captureRoadComparison(current, result.state.map));
       const changes = getRoadChanges(current.map, result.state.map);
       if (changes.size) setRoadChanges(changes);
       setMapRevision((revision) => revision + 1);
@@ -349,6 +361,8 @@ export function PaperworldWorkspace() {
   }
 
   function resetSimulation() {
+    setComparisonCapture(null);
+    setComparisonResult(null);
     setStartError(null);
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
     setDeliveryFeedback(null);
@@ -372,6 +386,7 @@ export function PaperworldWorkspace() {
     });
     if (!result.accepted) return result.error;
     updateSimulation(() => result.state);
+    setComparisonCapture(captureRoadComparison(current, result.state.map));
     setRoadChanges(getRoadChanges(current.map, result.state.map));
     setWorldRevision((revision) => revision + 1);
     setMapRevision((revision) => revision + 1);
@@ -391,6 +406,7 @@ export function PaperworldWorkspace() {
   }
 
   function togglePlayback() {
+    setComparisonResult(null);
     resumeAfterPaperworkRef.current = false;
     setIsPlaying((playing) => {
       isPlayingRef.current = !playing;
@@ -438,21 +454,22 @@ export function PaperworldWorkspace() {
             <div className="column-heading">
               <div>
                 <h2 id="world-title">Route plan</h2>
-                <div className="world-mini-metrics" aria-label="Delivery status"><span>Delivered <strong>{metrics.deliveredCount}</strong></span><span>Waiting <strong>{metrics.queuedCount + metrics.unreachableCount}</strong></span></div>
+                <div className="world-mini-metrics" aria-label="Delivery status"><span>Delivered <strong>{renderedMetrics.deliveredCount}</strong></span><span>Waiting <strong>{renderedMetrics.queuedCount + renderedMetrics.unreachableCount}</strong></span>{comparisonResult ? <span>Comparison preview</span> : null}</div>
               </div>
-              <div className="simulation-clock" aria-label={`Elapsed simulation time ${formatElapsed(metrics.elapsedSeconds)}`}>
+              <div className="simulation-clock" aria-label={`Elapsed simulation time ${formatElapsed(renderedMetrics.elapsedSeconds)}`}>
                 <span className={`clock-dot ${isPlaying ? "clock-dot-running" : ""}`} aria-hidden="true" />
-                <strong>{formatElapsed(metrics.elapsedSeconds)}</strong>
+                <strong>{formatElapsed(renderedMetrics.elapsedSeconds)}</strong>
               </div>
             </div>
             <DeliveryWorld
-              locations={presentedMap.locations}
-              roads={presentedMap.roads}
+              locations={comparisonResult ? renderedSimulation.map.locations : presentedMap.locations}
+              roads={comparisonResult ? renderedSimulation.map.roads : presentedMap.roads}
               couriers={courierMarkers}
-              roadChanges={roadChanges}
-              onToggleRoad={toggleRoad}
+              roadChanges={comparisonResult && comparisonSide === "withoutChange" ? new Map() : roadChanges}
+              onToggleRoad={comparisonResult ? undefined : toggleRoad}
               mapRevision={mapRevision}
               deliveredEvents={deliveredEvents}
+              suppressDeliveryEffects={Boolean(comparisonResult)}
               worldBirthRevision={worldBirthRevision}
             />
             <details className="run-controls">
@@ -467,6 +484,27 @@ export function PaperworldWorkspace() {
                 <button className="simulation-reset" type="button" onClick={resetSimulation}>Reset run</button>
               </div>
             </details>
+            <details className="road-comparison" onToggle={(event) => { if (!event.currentTarget.open) setComparisonResult(null); }}>
+              <summary>Compare road change</summary>
+              <div className="comparison-content">
+                <p>Simulation comparison · next 20 simulation seconds. Both versions start from the same deliveries and courier positions.</p>
+                <button type="button" disabled={!comparisonCapture} onClick={() => { if (!comparisonCapture) return; pauseForPaperwork(); setComparisonSide("withChange"); setComparisonResult(runRoadComparison(comparisonCapture)); }}>Compare latest road change</button>
+                {!comparisonCapture ? <small>Confirm a road closure or connection to compare its effect.</small> : null}
+                {comparisonResult ? <>
+                  <div className="comparison-switch" aria-label="Comparison map">
+                    <button type="button" aria-pressed={comparisonSide === "withoutChange"} onClick={() => setComparisonSide("withoutChange")}>Without change</button>
+                    <button type="button" aria-pressed={comparisonSide === "withChange"} onClick={() => setComparisonSide("withChange")}>With change</button>
+                    <button type="button" onClick={() => setComparisonResult(null)}>Return to live world</button>
+                  </div>
+                  <p role="status">Captured at {formatElapsed(comparisonCapture?.capturedAtSeconds ?? 0)}. Previewing {comparisonSide === "withChange" ? "with" : "without"} the road change. Your live run is paused.</p>
+                  <table><caption>Next 20 simulation seconds</caption><thead><tr><th>Outcome</th><th>Without</th><th>With</th></tr></thead><tbody>
+                    <tr><th>Delivered total at end</th><td>{comparisonResult.withoutMetrics.delivered}</td><td>{comparisonResult.withMetrics.delivered}</td></tr>
+                    <tr><th>Blocked at end</th><td>{comparisonResult.withoutMetrics.waiting}</td><td>{comparisonResult.withMetrics.waiting}</td></tr>
+                    <tr><th>Distance in window (map units)</th><td>{comparisonResult.withoutMetrics.distance.toFixed(1)}</td><td>{comparisonResult.withMetrics.distance.toFixed(1)}</td></tr>
+                  </tbody></table>
+                </> : null}
+              </div>
+            </details>
           </section>
 
           <OperationsWorkbench simulation={simulation} worldRevision={worldRevision} onApplyCommands={applyCommandsToSimulation} />
@@ -476,7 +514,7 @@ export function PaperworldWorkspace() {
             startsNewWorld={scenario === "sample"}
             mapRevision={mapRevision}
             pinnedLocationIds={pinnedLocationIds}
-            onScanStart={() => setRoadChanges(new Map())}
+            onScanStart={() => { setComparisonResult(null); setRoadChanges(new Map()); }}
             onApply={applyProposedMap}
             onPauseSimulation={pauseForPaperwork}
             onFinishReview={finishPaperworkReview}

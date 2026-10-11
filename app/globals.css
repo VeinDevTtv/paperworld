@@ -3681,3 +3681,15 @@ p {
   .map-legend { gap: 6px 10px; }
   .world-column .selection-readout { padding-top: 3px; }
 }
+
+.road-comparison { margin-top: 10px; font-size: 12px; color: var(--text-secondary); }
+.road-comparison summary { cursor: pointer; }
+.comparison-content { display: grid; gap: 10px; padding-top: 10px; }
+.comparison-content p { margin: 0; line-height: 1.5; }
+.comparison-content button { padding: 7px 10px; border: 1px solid #d6dcce; border-radius: 6px; background: #f7f8f0; cursor: pointer; }
+.comparison-content button:disabled { opacity: .5; cursor: default; }
+.comparison-switch { display: flex; flex-wrap: wrap; gap: 6px; }
+.comparison-switch button[aria-pressed="true"] { background: #e1ead9; border-color: #6a8763; }
+.comparison-content table { width: 100%; border-collapse: collapse; text-align: left; }
+.comparison-content th, .comparison-content td { padding: 5px; border-bottom: 1px solid #e2e5dc; }
+.comparison-content caption { text-align: left; margin-bottom: 5px; }

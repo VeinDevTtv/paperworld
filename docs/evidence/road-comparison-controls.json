@@ -1,0 +1,7 @@
+{
+  "source": "Ravylo browser, synthetic paper and replayed scan responses; actual comparison and live engine",
+  "viewport": { "width": 390, "height": 844, "documentWidth": 375, "tableWidth": 325.6 },
+  "resume": { "previewExited": true, "liveAdvanced": true, "beforeSeconds": 6.0125, "afterSeconds": 6.062500000000001, "inferenceCalls": 0 },
+  "reset": { "comparisonCleared": true, "compareDisabled": true, "packages": 0, "elapsedSeconds": 0, "inferenceCalls": 0 },
+  "visual": "Fixed-viewport native recording frame inspected; text softened by recording compression. Not a physical mobile check."
+}
