@@ -149,6 +149,7 @@ for (const width of [1280, 390]) test(`paper recovery and read-only comparison a
   await compare(page);
   assert.equal(await page.locator('#command-text').count(), 0, 'live command panel is not actionable in preview');
   assert.equal(await page.getByRole('button', { name: 'Upload & scan', exact: true }).isDisabled(), true);
+  assert.equal(await page.getByRole('button', { name: 'Advance simulation by one second', exact: true }).isDisabled(), true, 'comparison cannot step the live engine');
   assert.match(await page.getByTestId('comparison-takeaway').innerText(), /pkg-1.*completes.*without it, it remains blocked/);
   await page.getByRole('button', { name: 'Without change', exact: true }).click();
   assert.match(await page.getByLabel('Delivery status', { exact: true }).innerText(), /Waiting\s*1/);

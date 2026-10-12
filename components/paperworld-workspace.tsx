@@ -520,8 +520,8 @@ export function PaperworldWorkspace() {
             <details className="run-controls">
               <summary>Playback controls <span>{playbackSpeed}× speed</span></summary>
               <div className="run-control-content">
-                {scenario === "sample" ? <button className="simulation-step" type="button" onClick={togglePlayback}>{isPlaying ? "Pause example" : "Play example"}</button> : null}
-                <button className="simulation-step" type="button" onClick={() => updateSimulation((current) => tick(current, 1))} aria-label="Advance simulation by one second">
+                {scenario === "sample" ? <button className="simulation-step" type="button" disabled={Boolean(comparisonResult)} onClick={() => { if (!comparisonActiveRef.current) togglePlayback(); }}>{isPlaying ? "Pause example" : "Play example"}</button> : null}
+                <button className="simulation-step" type="button" disabled={Boolean(comparisonResult)} onClick={() => { if (!comparisonActiveRef.current) updateSimulation((current) => tick(current, 1)); }} aria-label="Advance simulation by one second">
                   <span aria-hidden="true">›</span> Step 1 second
                 </button>
                 <label className="speed-select"><span>Speed</span><select aria-label="Simulation speed" value={playbackSpeed} onChange={(event) => setPlaybackSpeed(Number(event.target.value) as 0.25 | 1 | 4)}>
