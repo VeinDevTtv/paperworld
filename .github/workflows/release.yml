@@ -28,7 +28,26 @@ jobs:
         run: npm run typecheck
       - name: Build
         run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
       - name: Check source and browser assets for secrets
         run: |
           npm run check:secrets
           npx tsx scripts/check-secrets.ts --browser
+      - name: Install isolated browser test tools
+        run: |
+          npm install --prefix "$RUNNER_TEMP/paperworld-browser" --no-package-lock --ignore-scripts playwright@1.56.1
+          "$RUNNER_TEMP/paperworld-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Production browser regression tests (mocked providers)
+        run: node --test tests/browser/release.cjs
+        env:
+          NODE_PATH: ${{ runner.temp }}/paperworld-browser/node_modules
+      - name: Save browser test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-regression-${{ github.sha }}
+          path: .local/ci-browser/
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7

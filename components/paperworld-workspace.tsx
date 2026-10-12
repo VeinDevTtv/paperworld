@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { captureRoadComparison, runRoadComparison, type RoadComparisonCapture, type RoadComparisonResult } from "../lib/road-comparison";
+import { summarizeRoadComparison } from "../lib/comparison-summary";
 import { DeliveryWorld, type RoadChangeKind } from "./delivery-world";
 import { PaperworkPanel } from "./paperwork-panel";
 import { OperationsWorkbench } from "./operations-workbench";
@@ -133,6 +134,8 @@ export function PaperworldWorkspace() {
   const simulationRef = useRef(simulation);
   const [comparisonCapture, setComparisonCapture] = useState<RoadComparisonCapture | null>(null);
   const [comparisonResult, setComparisonResult] = useState<RoadComparisonResult | null>(null);
+  const comparisonActiveRef = useRef(false);
+  const [comparisonError, setComparisonError] = useState<string | null>(null);
   const [comparisonSide, setComparisonSide] = useState<"withoutChange" | "withChange">("withChange");
   const renderedSimulation = comparisonResult ? comparisonResult[comparisonSide] : simulation;
   const [deliveryFeedback, setDeliveryFeedback] = useState<string | null>(null);
@@ -166,6 +169,7 @@ export function PaperworldWorkspace() {
   const resumeAfterPaperworkRef = useRef(false);
 
   const updateSimulation = useCallback((update: (current: SimulationState) => SimulationState) => {
+    comparisonActiveRef.current = false;
     setComparisonResult(null);
     const next = update(simulationRef.current);
     simulationRef.current = next;
@@ -175,6 +179,8 @@ export function PaperworldWorkspace() {
   useEffect(() => {
     if (!isPlaying) return;
     const interval = window.setInterval(() => {
+      // A queued interval must not advance the live world after entering preview.
+      if (comparisonActiveRef.current || !isPlayingRef.current) return;
       updateSimulation((current) => tick(current, 0.05 * playbackSpeed));
     }, 50);
     return () => window.clearInterval(interval);
@@ -303,6 +309,7 @@ export function PaperworldWorkspace() {
   const visibleEvents = useMemo(() => [...simulation.events].reverse().slice(0, 8), [simulation.events]);
 
   function applyProposedMap(map: PaperMap, startsFreshWorld: boolean) {
+    if (comparisonActiveRef.current) return "Return to the live world before making changes.";
     const changes = getRoadChanges(simulationRef.current.map, map);
     if (startsFreshWorld) {
       setComparisonCapture(null);
@@ -333,6 +340,7 @@ export function PaperworldWorkspace() {
   }
 
   function applyCommandsToSimulation(commands: Parameters<typeof applyCommands>[1]) {
+    if (comparisonActiveRef.current) return "Return to the live world before making changes.";
     const current = simulationRef.current;
     const result = applyCommands(current, commands);
     if (!result.accepted) return result.error;
@@ -348,6 +356,7 @@ export function PaperworldWorkspace() {
   }
 
   function startDemoRun() {
+    if (comparisonActiveRef.current) return "Return to the live world before making changes.";
     setStartError(null);
     const result = startDemoDeliveries(simulationRef.current);
     if (!result.accepted) return result.error;
@@ -361,6 +370,9 @@ export function PaperworldWorkspace() {
   }
 
   function resetSimulation() {
+    comparisonActiveRef.current = false;
+    isPlayingRef.current = false;
+    setComparisonError(null);
     setComparisonCapture(null);
     setComparisonResult(null);
     setStartError(null);
@@ -375,6 +387,7 @@ export function PaperworldWorkspace() {
   }
 
   function toggleRoad(roadId: string) {
+    if (comparisonActiveRef.current) return "Return to the live world before making changes.";
     const current = simulationRef.current;
     const road = current.map.roads.find((candidate) => candidate.id === roadId);
     if (!road) return "That road is no longer on the map. Refresh the route view and try again.";
@@ -405,8 +418,32 @@ export function PaperworldWorkspace() {
     setIsPlaying(false);
   }
 
-  function togglePlayback() {
+  function leaveComparison() {
+    comparisonActiveRef.current = false;
     setComparisonResult(null);
+    setComparisonError(null);
+  }
+
+  function enterComparison() {
+    if (!comparisonCapture || comparisonActiveRef.current) return;
+    try {
+      const result = runRoadComparison(comparisonCapture);
+      pauseForPaperwork();
+      comparisonActiveRef.current = true;
+      setComparisonError(null);
+      setComparisonSide("withChange");
+      setComparisonResult(result);
+      // Invalidate existing command proposals; the command panel also unmounts.
+      setWorldRevision((revision) => revision + 1);
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+      setDeliveryFeedback(null);
+    } catch (error) {
+      setComparisonError(error instanceof Error ? error.message : "This edit could not be compared.");
+    }
+  }
+
+  function togglePlayback() {
+    leaveComparison();
     resumeAfterPaperworkRef.current = false;
     setIsPlaying((playing) => {
       isPlayingRef.current = !playing;
@@ -432,6 +469,10 @@ export function PaperworldWorkspace() {
             className={`simulation-toggle ${isPlaying ? "simulation-toggle-playing" : ""}`}
             type="button"
             onClick={() => {
+              if (comparisonActiveRef.current) {
+                leaveComparison();
+                return;
+              }
               if (scenario === "sample") {
                 const panel = document.getElementById("paperwork-panel");
                 panel?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" });
@@ -439,11 +480,11 @@ export function PaperworldWorkspace() {
               } else if (demoStartAvailable) setStartError(startDemoRun());
               else togglePlayback();
             }}
-            aria-label={scenario === "sample" ? "Scan paper" : demoStartAvailable ? "Start deliveries" : isPlaying ? "Pause simulation" : "Resume simulation"}
+            aria-label={comparisonResult ? "Return to live world" : scenario === "sample" ? "Scan paper" : demoStartAvailable ? "Start deliveries" : isPlaying ? "Pause simulation" : "Resume simulation"}
             aria-pressed={scenario === "sample" || demoStartAvailable ? undefined : isPlaying}
           >
             <span className="simulation-toggle-icon" aria-hidden="true">{scenario === "sample" ? "↑" : isPlaying ? "Ⅱ" : "▶"}</span>
-            <span>{scenario === "sample" ? "Scan paper" : demoStartAvailable ? "Start deliveries" : isPlaying ? "Pause" : "Resume"}</span>
+            <span>{comparisonResult ? "Return to live world" : scenario === "sample" ? "Scan paper" : demoStartAvailable ? "Start deliveries" : isPlaying ? "Pause" : "Resume"}</span>
           </button>
         </div>
       </header>
@@ -489,19 +530,21 @@ export function PaperworldWorkspace() {
                 <button className="simulation-reset" type="button" onClick={resetSimulation}>Reset run</button>
               </div>
             </details>
-            <details className="road-comparison" onToggle={(event) => { if (!event.currentTarget.open) setComparisonResult(null); }}>
+            <details className="road-comparison" onToggle={(event) => { if (!event.currentTarget.open) leaveComparison(); }}>
               <summary>Compare road change</summary>
               <div className="comparison-content">
                 <p>Simulation comparison · next 20 simulation seconds. Both versions start from the same deliveries and courier positions.</p>
-                <button type="button" disabled={!comparisonCapture} onClick={() => { if (!comparisonCapture) return; pauseForPaperwork(); setComparisonSide("withChange"); setComparisonResult(runRoadComparison(comparisonCapture)); }}>Compare latest road change</button>
+                <button type="button" disabled={!comparisonCapture || Boolean(comparisonResult)} onClick={enterComparison}>Compare latest road change</button>
+                {comparisonError ? <p role="alert">{comparisonError}</p> : null}
                 {!comparisonCapture ? <small>Confirm a road closure or connection to compare its effect.</small> : null}
                 {comparisonResult ? <>
                   <div className="comparison-switch" aria-label="Comparison map">
                     <button type="button" aria-pressed={comparisonSide === "withoutChange"} onClick={() => setComparisonSide("withoutChange")}>Without change</button>
                     <button type="button" aria-pressed={comparisonSide === "withChange"} onClick={() => setComparisonSide("withChange")}>With change</button>
-                    <button type="button" onClick={() => setComparisonResult(null)}>Return to live world</button>
+                    <button type="button" onClick={leaveComparison}>Return to live world</button>
                   </div>
                   <p role="status">Captured at {formatElapsed(comparisonCapture?.capturedAtSeconds ?? 0)}. Previewing {comparisonSide === "withChange" ? "with" : "without"} the road change. Your live run is paused.</p>
+                  <p role="status" data-testid="comparison-takeaway">{summarizeRoadComparison(comparisonResult)}</p>
                   <table><caption>Next 20 simulation seconds</caption><thead><tr><th>Outcome</th><th>Without</th><th>With</th></tr></thead><tbody>
                     <tr><th>Delivered total at end</th><td>{comparisonResult.withoutMetrics.delivered}</td><td>{comparisonResult.withMetrics.delivered}</td></tr>
                     <tr><th>Blocked at end</th><td>{comparisonResult.withoutMetrics.waiting}</td><td>{comparisonResult.withMetrics.waiting}</td></tr>
@@ -512,20 +555,29 @@ export function PaperworldWorkspace() {
             </details>
           </section>
 
-          <OperationsWorkbench simulation={simulation} worldRevision={worldRevision} onApplyCommands={applyCommandsToSimulation} />
+          {comparisonResult ? (
+            <section className="workbench-section" aria-label="Read-only comparison" data-testid="comparison-readonly">
+              <p role="status">Comparison is read-only. Commands and paper edits are unavailable until you return to the live world. Any unconfirmed command must be reviewed again.</p>
+              <button className="workbench-secondary-submit" type="button" onClick={leaveComparison}>Return to live world to make changes</button>
+            </section>
+          ) : (
+            <OperationsWorkbench simulation={simulation} worldRevision={worldRevision} onApplyCommands={applyCommandsToSimulation} />
+          )}
 
+          <fieldset disabled={Boolean(comparisonResult)} style={{ display: "contents" }} aria-label="Paper input" data-testid="paper-input-lock">
           <PaperworkPanel
             previousMap={simulation.map}
             startsNewWorld={scenario === "sample"}
             mapRevision={mapRevision}
             pinnedLocationIds={pinnedLocationIds}
-            onScanStart={() => { setComparisonResult(null); setRoadChanges(new Map()); }}
+            onScanStart={() => { if (!comparisonActiveRef.current) setRoadChanges(new Map()); }}
             onApply={applyProposedMap}
             onPauseSimulation={pauseForPaperwork}
             onFinishReview={finishPaperworkReview}
             onStartDemoDeliveries={startDemoRun}
-      demoStartAvailable={demoStartAvailable}
+            demoStartAvailable={demoStartAvailable}
           />
+          </fieldset>
         </div>
 
         <details className="run-details" id="run-details">
